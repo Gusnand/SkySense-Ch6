@@ -1,61 +1,35 @@
-//
-//  ContentView.swift
-//  SkySense
-//
-//  Created by Ketut Agus Cahyadi Nanda on 15/09/26.
-//
-
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-  @Environment(\.modelContext) private var modelContext
-  @Query private var items: [Item]
-  
-  var body: some View {
-    NavigationSplitView {
-      List {
-        ForEach(items) { item in
-          NavigationLink {
-            Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-          } label: {
-            Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-          }
+    @StateObject private var engine = AstronomyEngine()
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("SkySense Engine")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            Text("Jupiter Position:")
+                .font(.headline)
+            
+            Text("Azimuth: \(engine.lastAzimuth, specifier: "%.1f")°")
+            Text("Altitude: \(engine.lastAltitude, specifier: "%.1f")°")
+            
+            Text("Check XCode Console for printed output.")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .padding(.top, 20)
         }
-        .onDelete(perform: deleteItems)
-      }
-      .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
-          EditButton()
+        .padding()
+        .onAppear {
+            engine.startTracking()
         }
-        ToolbarItem {
-          Button(action: addItem) {
-            Label("Add Item", systemImage: "plus")
-          }
+        .onDisappear {
+            engine.stopTracking()
         }
-      }
-    } detail: {
-      Text("Select an item")
     }
-  }
-  
-  private func addItem() {
-    withAnimation {
-      let newItem = Item(timestamp: Date())
-      modelContext.insert(newItem)
-    }
-  }
-  
-  private func deleteItems(offsets: IndexSet) {
-    withAnimation {
-      for index in offsets {
-        modelContext.delete(items[index])
-      }
-    }
-  }
 }
 
 #Preview {
-  ContentView()
-    .modelContainer(for: Item.self, inMemory: true)
+    ContentView()
 }
