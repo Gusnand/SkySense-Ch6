@@ -53,10 +53,8 @@ class CameraManager: ObservableObject {
             try device.lockForConfiguration()
             
             if isNightVisionEnabled {
-                // Night Vision Mode: lock to Custom, max ISO, low FPS
                 if device.isExposureModeSupported(.custom) {
                     let maxISO = device.activeFormat.maxISO
-                    // 10 FPS duration to gather light
                     let duration = CMTimeMake(value: 1, timescale: 10)
                     device.setExposureModeCustom(duration: duration, iso: maxISO, completionHandler: nil)
                 }
@@ -65,7 +63,6 @@ class CameraManager: ObservableObject {
                 device.activeVideoMaxFrameDuration = CMTimeMake(value: 1, timescale: 10)
                 
             } else {
-                // Normal Mode: Auto exposure, 30 FPS
                 if device.isExposureModeSupported(.continuousAutoExposure) {
                     device.exposureMode = .continuousAutoExposure
                 }
@@ -77,6 +74,22 @@ class CameraManager: ObservableObject {
             device.unlockForConfiguration()
         } catch {
             print("Error locking configuration: \(error)")
+        }
+    }
+    
+    func pause() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            if self?.session.isRunning == true {
+                self?.session.stopRunning()
+            }
+        }
+    }
+    
+    func resume() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            if self?.session.isRunning == false {
+                self?.session.startRunning()
+            }
         }
     }
 }

@@ -123,4 +123,9 @@ class HapticManager: ObservableObject {
         }
         continuousPlayer = nil
     }
+    
+    func pause() {
+        stopContinuous()
+        lastHapticState = .silent
+    }
 }

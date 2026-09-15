@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var dragStartAltitude: Double = 0.0
     
     @State private var selectedFilter: CelestialObjectType = .planet
+    @State private var selectedCelestialObject: CelestialObject?
     
     var body: some View {
         ZStack {
@@ -45,17 +46,21 @@ struct ContentView: View {
                     // TARGET IN FOV -> Render the "Locked" Tooltip
                     VStack {
                         Spacer()
-                        VStack(spacing: 4) {
-                            Text(nearest.object.name)
-                                .font(.headline).bold()
-                                .foregroundColor(.white)
-                            Text("Locked (\(String(format: "%.1f", dist))°)")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
+                        Button(action: {
+                            selectedCelestialObject = nearest.object
+                        }) {
+                            VStack(spacing: 4) {
+                                Text(nearest.object.name)
+                                    .font(.headline).bold()
+                                    .foregroundColor(.white)
+                                Text("Locked (\(String(format: "%.1f", dist))°)")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .liquidGlass()
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .liquidGlass()
                         Spacer()
                     }
                 } else {
@@ -71,7 +76,7 @@ struct ContentView: View {
                         .font(.system(size: 30))
                         .foregroundColor(.white)
                         .shadow(color: .white, radius: 5)
-                        .rotationEffect(.degrees(90 - angle)) // Adjust so pointing correctly
+                        .rotationEffect(.degrees(90 - angle))
                         .offset(x: cos(angle * .pi / 180) * 150, y: -sin(angle * .pi / 180) * 150)
                 }
             }
@@ -80,7 +85,6 @@ struct ContentView: View {
             VStack {
                 // Top HUD
                 HStack {
-                    // Category Pills ScrollView
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             Button(action: { selectedFilter = .planet }) {
@@ -151,11 +155,24 @@ struct ContentView: View {
         .onDisappear {
             astronomyEngine.stopTracking()
             motionManager.stop()
-            hapticManager.stopContinuous()
+            hapticManager.pause()
         }
         .onChange(of: motionManager.deviceAzimuth) { _ in updateSensoryEngine() }
         .onChange(of: motionManager.deviceAltitude) { _ in updateSensoryEngine() }
         .onChange(of: selectedFilter) { _ in updateSensoryEngine() }
+        .sheet(item: $selectedCelestialObject) { object in
+            CelestialStorySheet(object: object)
+                .presentationBackground(.ultraThinMaterial)
+                .preferredColorScheme(.dark)
+                .presentationDetents([.fraction(0.4), .large])
+                .onAppear {
+                    cameraManager.pause()
+                    hapticManager.pause()
+                }
+                .onDisappear {
+                    cameraManager.resume()
+                }
+        }
     }
     
     private func getNearestTarget() -> TargetCoordinates? {
@@ -192,8 +209,41 @@ struct ContentView: View {
         
         let dist = AstronomyMath.angularDistance(alt1: calAlt, az1: calAz, alt2: nearest.alt, az2: nearest.az)
         
-        // Feed the distance straight into the sensory haptics engine
         hapticManager.updateHapticFeedback(distance: dist)
+    }
+}
+
+struct CelestialStorySheet: View {
+    let object: CelestialObject
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .center, spacing: 16) {
+                Image(systemName: object.type == .planet ? "circle.hexagonpath" : "sparkles")
+                    .font(.system(size: 40))
+                    .foregroundColor(object.type == .planet ? .orange : .cyan)
+                    .shadow(color: .white.opacity(0.3), radius: 10)
+                
+                VStack(alignment: .leading) {
+                    Text(object.name)
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.white)
+                    
+                    Text(object.type == .planet ? "Planet" : "Star")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            }
+            .padding(.top, 20)
+            
+            Text(object.storyDescription)
+                .font(.body.weight(.medium))
+                .foregroundColor(.white.opacity(0.95))
+                .lineSpacing(6)
+            
+            Spacer()
+        }
+        .padding(30)
     }
 }
 
