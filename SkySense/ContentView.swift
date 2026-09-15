@@ -4,6 +4,7 @@ struct ContentView: View {
     @StateObject private var astronomyEngine = AstronomyEngine()
     @StateObject private var motionManager = MotionManager()
     @StateObject private var cameraManager = CameraManager()
+    @StateObject private var hapticManager = HapticManager()
     
     @State private var alignmentOffsetAzimuth: Double = 0.0
     @State private var alignmentOffsetAltitude: Double = 0.0
@@ -21,9 +22,7 @@ struct ContentView: View {
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            // Horizontal drag shifts azimuth offset
                             alignmentOffsetAzimuth = dragStartAzimuth - Double(value.translation.width) * 0.1
-                            // Vertical drag shifts altitude offset
                             alignmentOffsetAltitude = dragStartAltitude + Double(value.translation.height) * 0.1
                         }
                         .onEnded { _ in
@@ -118,7 +117,7 @@ struct ContentView: View {
                     }
                     .padding(.trailing)
                 }
-                .padding(.top, 50) // Safe area
+                .padding(.top, 50)
                 
                 Spacer()
                 
@@ -152,7 +151,11 @@ struct ContentView: View {
         .onDisappear {
             astronomyEngine.stopTracking()
             motionManager.stop()
+            hapticManager.stopContinuous()
         }
+        .onChange(of: motionManager.deviceAzimuth) { _ in updateSensoryEngine() }
+        .onChange(of: motionManager.deviceAltitude) { _ in updateSensoryEngine() }
+        .onChange(of: selectedFilter) { _ in updateSensoryEngine() }
     }
     
     private func getNearestTarget() -> TargetCoordinates? {
@@ -175,8 +178,22 @@ struct ContentView: View {
         if dAz < -180 { dAz += 360 }
         
         let dAlt = targetAlt - deviceAlt
-        
         return atan2(dAlt, dAz) * 180 / .pi
+    }
+    
+    private func updateSensoryEngine() {
+        guard let nearest = getNearestTarget() else {
+            hapticManager.updateHapticFeedback(distance: 999)
+            return
+        }
+        
+        let calAz = motionManager.deviceAzimuth + alignmentOffsetAzimuth
+        let calAlt = motionManager.deviceAltitude + alignmentOffsetAltitude
+        
+        let dist = AstronomyMath.angularDistance(alt1: calAlt, az1: calAz, alt2: nearest.alt, az2: nearest.az)
+        
+        // Feed the distance straight into the sensory haptics engine
+        hapticManager.updateHapticFeedback(distance: dist)
     }
 }
 
