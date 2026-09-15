@@ -19,10 +19,10 @@
 
 ### 3.1 The Viewfinder (Camera UI)
 * **Full-Screen Camera:** Acts as the base visual layer, built using AVFoundation for raw hardware control.
-* **High-Contrast HUD:** A simple reticle in the center of the screen to indicate the targeting area. UI must be crisp and glowing to contrast against the dark/grainy night camera feed.
-* **Category Pills:** A horizontally scrolling list of toggles (e.g., `Planets`, `Bright Stars`, `ISS/Satellites`). 
+* **High-Contrast HUD:** A simple reticle in the center of the screen to indicate the targeting area.
+* **Category Pills (Liquid Glass):** A horizontally scrolling list of toggles (e.g., `Planets`, `Bright Stars`). These must utilize an advanced "liquid glass" aesthetic—highly translucent, glowing pills that refract the camera feed behind them, mimicking the latest iOS contextual intelligence UI. 
 * **Night Vision Toggle:** A button that drops the camera frame rate (e.g., to 5-10 fps) and maxes out ISO to gather light, revealing stars on-screen.
-* **Calibration Drag (Compass Drift Fix):** The user can use one finger to pan the UI overlay slightly left/right/up/down to perfectly align the digital tooltips with the real stars seen in the camera feed, correcting inherent phone compass inaccuracies.
+* **Calibration Drag (Compass Drift Fix):** The user can use one finger to pan the UI overlay to perfectly align the digital tooltips with the real stars.
 
 ### 3.2 Sensory Engine (Haptics, Audio, & Visuals)
 * **Directional Arrows:** A subtle arrow appears on the edge of the screen pointing the shortest path to the filtered object to minimize aimless sweeping.
@@ -40,3 +40,8 @@
 * **NO Computer Vision:** The camera is strictly a visual passthrough. It does not analyze image pixels.
 * **Coordinate Math:** Uses device location (GPS), Julian Date, and Local Sidereal Time to calculate Altitude/Azimuth (Alt/Az) coordinates.
 * **Sensor Fusion:** Uses `CoreMotion` (DeviceMotion) to track phone orientation, projecting the calculated Alt/Az coordinates onto the screen mathematically.
+
+### 3.5 UI/UX Design Language: "Liquid Glass" Aesthetic
+* **Visual Theme:** The app must feel like a native, futuristic iOS intelligence feature. It completely avoids flat, opaque colors. 
+* **Clickable Elements:** All buttons, pills, and tooltips must use heavy background blurs (`ultraThinMaterial`), subtle glowing borders, and drop shadows to ensure they remain highly legible against both pitch-black skies and bright city lights.
+* **Bottom Sheet:** When triggered, the informational sheet must inherit a vibrant, translucent blur that allows the underlying camera feed to softly bleed through the background, maintaining spatial context rather than blocking the screen with a solid dark sheet.

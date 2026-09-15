@@ -25,13 +25,16 @@
 * *Night Vision Mode:* Lock `setExposureModeCustom` to the device's maximum ISO. Drop `activeVideoMinFrameDuration` and `activeVideoMaxFrameDuration` to 10 FPS (1/10th second) to maximize light gathering.
 * **Success Metric:** The user can toggle a button and immediately see the camera feed become much brighter (albeit with lower framerate/motion blur).
 
-## Phase 4: The Viewfinder UI & Calibration
-**Goal:** Build the SwiftUI overlay, guide the user, and allow compass correction.
-* **Task 4.1:** Build the UI overlay with a central targeting reticle and bottom Category Pills (`@State` driven).
-* **Task 4.2:** Implement **Directional Edge Arrows**. If the active target is off-screen, calculate the shortest path and display a small glowing arrow on the edge of the screen pointing toward it.
-* **Task 4.3:** Render the clickable SwiftUI tooltip over the target when it enters the FOV.
-* **Task 4.4:** Implement a `DragGesture` on the full-screen overlay. Panning a finger across the screen updates the `alignmentOffset` (from Phase 2), allowing the user to manually shift the tooltips to align with the bright stars in the camera feed.
-* **Success Metric:** Tooltips float accurately based on math, edge arrows guide the user to the target, and dragging the screen calibrates the alignment.
+
+
+## Phase 4: The Viewfinder UI & Liquid Glass Styling
+**Goal:** Build the SwiftUI overlay, guide the user, and implement the premium translucent UI aesthetic.
+* **Task 4.1:** Build the UI overlay. Implement the Category Pills using a strict "Liquid Glass" SwiftUI modifier stack. 
+  * *Agent Instruction:* Use `.background(.ultraThinMaterial)` combined with a `.clipShape(Capsule())`. Apply an `.overlay` with a `Capsule().stroke(lineWidth: 1)` using a `LinearGradient` (e.g., white to clear) to create a glowing glass edge. Add a subtle `.shadow(color: .white.opacity(0.2), radius: 10)` for the outer glow.
+* **Task 4.2:** Implement **Directional Edge Arrows**. If the active target is off-screen, display a small glowing arrow on the edge of the screen pointing toward it, utilizing the same translucent styling.
+* **Task 4.3:** Render the clickable SwiftUI tooltip over the target when it enters the FOV. This tooltip should also be a small `ultraThinMaterial` pill with a glowing border.
+* **Task 4.4:** Implement a `DragGesture` on the full-screen overlay. Panning a finger updates the `alignmentOffset` (from Phase 2), manually shifting the tooltips to fix compass drift.
+* **Success Metric:** The overlay elements (pills and tooltips) look like glowing, frosted glass that beautifully refracts the dark camera feed behind them.
 
 ## Phase 5: The Sensory Engine (Haptics)
 **Goal:** Implement the "feel your way to the stars" mechanic.
@@ -43,10 +46,12 @@
 * *Distance < 1° (Locked):* A distinct success haptic "thump".
 * **Success Metric:** The user can locate a target purely by following the vibration changes as they sweep the sky.
 
-## Phase 6: Storytelling & Performance
-**Goal:** Deliver the educational payload and optimize battery.
-* **Task 6.1:** Implement a SwiftUI `.sheet(item: $selectedObject)` that triggers when a tooltip is tapped. Use `.preferredColorScheme(.dark)` to force a dark UI.
-* **Task 6.2:** Display the object's name, icon, and the `storyDescription`.
-* **Task 6.3:** Throttle the `AstronomyMath` Alt/Az calculations to run only once every 5 seconds (stars move slowly). Let `CoreMotion` handle the 60fps UI interpolation.
-* **Task 6.4:** Pause the `AVCaptureSession` and stop haptics when the bottom sheet is fully expanded to save battery.
-* **Success Metric:** Tapping a locked object brings up a dark-themed informational sheet, and CPU usage drops significantly while reading.
+## Phase 6: Storytelling & Translucent Bottom Sheet
+**Goal:** Deliver the educational payload using a highly polished, vibrant modal presentation.
+* **Task 6.1:** Implement a SwiftUI `.sheet(item: $selectedObject)` or a custom draggable modal that triggers when a tooltip is tapped.
+* **Task 6.2:** Style the bottom sheet background to match the iOS "Liquid Glass" aesthetic. 
+  * *Agent Instruction:* Do not use a solid background color. Use `.presentationBackground(.regularMaterial)` or `.ultraThinMaterial` and ensure `.preferredColorScheme(.dark)` is active so the blur adapts to dark mode, allowing the camera feed to subtly bleed through the sheet.
+* **Task 6.3:** Display the object's name, icon, and the `storyDescription` using high-contrast, hierarchical typography (e.g., `.font(.title2.weight(.semibold))`).
+* **Task 6.4:** Throttle the `AstronomyMath` Alt/Az calculations to run only once every 5 seconds. Let `CoreMotion` handle the 60fps UI interpolation.
+* **Task 6.5:** Pause the `AVCaptureSession` and stop haptics when the bottom sheet is fully expanded to save battery.
+* **Success Metric:** Tapping a locked object brings up a stunning, frosted-glass sheet, and CPU usage drops significantly while reading.
