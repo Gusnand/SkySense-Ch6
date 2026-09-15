@@ -3,48 +3,74 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var astronomyEngine = AstronomyEngine()
     @StateObject private var motionManager = MotionManager()
+    @StateObject private var cameraManager = CameraManager()
     
-    // Phase 2: Calibration Offsets
     @State private var alignmentOffsetAzimuth: Double = 0.0
     @State private var alignmentOffsetAltitude: Double = 0.0
-    
-    // Status state to update the UI
     @State private var isTargetCentered: Bool = false
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("SkySense Sensor Tracking")
-                .font(.title2)
-                .fontWeight(.bold)
+        ZStack {
+            // Background Layer: Raw Camera Feed
+            CameraPreviewView(session: cameraManager.session)
+                .edgesIgnoringSafeArea(.all)
             
-            GroupBox("Device Orientation") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Azimuth: \(motionManager.deviceAzimuth + alignmentOffsetAzimuth, specifier: "%.1f")°")
-                    Text("Altitude: \(motionManager.deviceAltitude + alignmentOffsetAltitude, specifier: "%.1f")°")
-                }
-            }
-            
-            GroupBox("Target (Jupiter) Pos") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Azimuth: \(astronomyEngine.lastAzimuth, specifier: "%.1f")°")
-                    Text("Altitude: \(astronomyEngine.lastAltitude, specifier: "%.1f")°")
-                }
-            }
-            
-            if isTargetCentered {
-                Text("TARGET CENTERED")
-                    .font(.headline)
-                    .foregroundColor(.green)
+            // UI Overlay
+            VStack {
+                // Night Vision Toggle
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        cameraManager.isNightVisionEnabled.toggle()
+                    }) {
+                        Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
+                            .font(.title2)
+                            .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                    }
                     .padding()
-                    .background(Color.green.opacity(0.2))
-                    .cornerRadius(8)
-            } else {
-                Text("Align device with target...")
-                    .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // Sensor / Target Tracking Heads Up Display (HUD)
+                VStack(spacing: 12) {
+                    Text(isTargetCentered ? "TARGET CENTERED" : "Searching...")
+                        .font(.headline)
+                        .foregroundColor(isTargetCentered ? .green : .white)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 16)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("DEVICE")
+                                .font(.caption).bold().foregroundColor(.gray)
+                            Text("Az: \(motionManager.deviceAzimuth + alignmentOffsetAzimuth, specifier: "%.1f")°")
+                            Text("Alt: \(motionManager.deviceAltitude + alignmentOffsetAltitude, specifier: "%.1f")°")
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing) {
+                            Text("TARGET")
+                                .font(.caption).bold().foregroundColor(.gray)
+                            Text("Az: \(astronomyEngine.lastAzimuth, specifier: "%.1f")°")
+                            Text("Alt: \(astronomyEngine.lastAltitude, specifier: "%.1f")°")
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.white)
                     .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                }
+                .padding()
             }
         }
-        .padding()
         .onAppear {
             astronomyEngine.startTracking()
             motionManager.start()
@@ -53,13 +79,8 @@ struct ContentView: View {
             astronomyEngine.stopTracking()
             motionManager.stop()
         }
-        // Continuous check for centering
-        .onChange(of: motionManager.deviceAzimuth) { _ in
-            checkCentering()
-        }
-        .onChange(of: motionManager.deviceAltitude) { _ in
-            checkCentering()
-        }
+        .onChange(of: motionManager.deviceAzimuth) { _ in checkCentering() }
+        .onChange(of: motionManager.deviceAltitude) { _ in checkCentering() }
     }
     
     private func checkCentering() {
@@ -69,7 +90,6 @@ struct ContentView: View {
         let targetAzimuth = astronomyEngine.lastAzimuth
         let targetAltitude = astronomyEngine.lastAltitude
         
-        // Skip check if we don't have valid target data yet
         guard targetAzimuth > 0 || targetAltitude > 0 else { return }
         
         let distance = AstronomyMath.angularDistance(
@@ -80,7 +100,7 @@ struct ContentView: View {
         )
         
         let wasCentered = isTargetCentered
-        let isNowCentered = distance < 5.0 // 5 degrees threshold
+        let isNowCentered = distance < 5.0
         
         if isNowCentered != wasCentered {
             isTargetCentered = isNowCentered
