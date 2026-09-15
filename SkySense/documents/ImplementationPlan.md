@@ -1,7 +1,21 @@
 # AI Agent Implementation Plan: SkySense
 
 **Tech Stack:** iOS, Swift, SwiftUI, AVFoundation (Raw Camera), CoreMotion, CoreHaptics, Combine.
-**Workflow Rule:** Execute this plan one phase at a time. Do not move to the next phase until the success metric of the current phase is fully met and tested.
+### STRICT WORKFLOW RULES FOR AI AGENT
+You are required to follow these rules unconditionally during execution:
+1. **Strict Phasing:** Execute this plan strictly one phase at a time. Do not move to the next phase or start writing code for future phases until I confirm the success metric of the current phase is fully met and tested.
+2. **Verification Build:** Before presenting the final code for a phase, you must self-verify the code. Check for syntax errors, missing framework imports (e.g., `SwiftUI`, `AVFoundation`, `CoreMotion`, `CoreHaptics`), and correct SwiftUI state management. Ensure the code is production-ready and compilable without warnings.
+3. **Mandatory Commit Message:** At the successful conclusion of *every* phase, you MUST generate a Markdown-formatted Git commit message for me to copy. 
+   * Use Conventional Commits format (e.g., `feat:`, `fix:`, `chore:`).
+   * Include a clear subject line.
+   * Include a bulleted body explaining the specific technical additions made during that phase. 
+*Format your commit message exactly like this at the end of each phase:*
+```text
+**Commit Message:**
+`feat: [Phase Name] - [Short description]`
+* [Detail 1]
+* [Detail 2]
+```
 
 ## Phase 1: The Astronomy Engine (Data & Math)
 **Goal:** Establish the foundational math to know *where* objects are before rendering any UI.
@@ -24,8 +38,6 @@
 * *Normal Mode:* 30 FPS, continuous auto-exposure.
 * *Night Vision Mode:* Lock `setExposureModeCustom` to the device's maximum ISO. Drop `activeVideoMinFrameDuration` and `activeVideoMaxFrameDuration` to 10 FPS (1/10th second) to maximize light gathering.
 * **Success Metric:** The user can toggle a button and immediately see the camera feed become much brighter (albeit with lower framerate/motion blur).
-
-
 
 ## Phase 4: The Viewfinder UI & Liquid Glass Styling
 **Goal:** Build the SwiftUI overlay, guide the user, and implement the premium translucent UI aesthetic.
