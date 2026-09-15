@@ -10,9 +10,33 @@
 		B4EA4A203059204B0006897E /* SkySense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkySense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B4EA4A373059229B0006897E /* Exceptions for "SkySense" folder in "SkySense" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				documents/ImplementationPlan.md,
+			);
+			target = B4EA4A1F3059204B0006897E /* SkySense */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		B4EA4A383059229B0006897E /* Exceptions for "SkySense" folder in "Compile Sources" phase from "SkySense" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = B4EA4A1C3059204B0006897E /* Sources */;
+			membershipExceptions = (
+				documents/ImplementationPlan.md,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B4EA4A223059204B0006897E /* SkySense */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B4EA4A373059229B0006897E /* Exceptions for "SkySense" folder in "SkySense" target */,
+				B4EA4A383059229B0006897E /* Exceptions for "SkySense" folder in "Compile Sources" phase from "SkySense" target */,
+			);
 			path = SkySense;
 			sourceTree = "<group>";
 		};
