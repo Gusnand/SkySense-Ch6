@@ -2,10 +2,19 @@ import Foundation
 import CoreLocation
 import Combine
 
+struct TargetCoordinates {
+    let object: CelestialObject
+    let alt: Double
+    let az: Double
+}
+
 class AstronomyEngine: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var locationManager: CLLocationManager?
     private var timer: Timer?
     
+    @Published var activeTargets: [TargetCoordinates] = []
+    
+    // For manual compatibility with old code
     @Published var lastAzimuth: Double = 0.0
     @Published var lastAltitude: Double = 0.0
     
@@ -22,11 +31,10 @@ class AstronomyEngine: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func startTracking() {
-        // Run calculations every 5 seconds
         timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.calculateJupiterPosition()
+            self?.calculatePositions()
         }
-        calculateJupiterPosition()
+        calculatePositions()
     }
     
     func stopTracking() {
@@ -34,31 +42,36 @@ class AstronomyEngine: NSObject, ObservableObject, CLLocationManagerDelegate {
         timer = nil
     }
     
-    private func calculateJupiterPosition() {
-        guard let location = locationManager?.location else { 
-            print("Waiting for location...")
-            return 
-        }
-        guard let jupiter = CelestialDatabase.getJupiter() else { return }
-        
+    func calculatePositions() {
+        guard let location = locationManager?.location else { return }
         let date = Date()
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
-        
         let lst = AstronomyMath.localSiderealTime(date: date, longitude: lon)
-        let coords = AstronomyMath.getAltAz(ra: jupiter.ra, dec: jupiter.dec, lat: lat, lst: lst)
         
-        DispatchQueue.main.async {
-            self.lastAzimuth = coords.az
-            self.lastAltitude = coords.alt
+        let allObjects = CelestialDatabase.objects
+        var newTargets: [TargetCoordinates] = []
+        
+        for object in allObjects {
+            let coords = AstronomyMath.getAltAz(ra: object.ra, dec: object.dec, lat: lat, lst: lst)
+            // Optional: Filter objects below horizon if desired, but for now we track them all.
+            newTargets.append(TargetCoordinates(object: object, alt: coords.alt, az: coords.az))
         }
         
-        print("Jupiter is currently at Azimuth \(String(format: "%.0f", coords.az))°, Altitude \(String(format: "%.0f", coords.alt))°.")
+        DispatchQueue.main.async {
+            self.activeTargets = newTargets
+            
+            // Keep Jupiter for legacy phase code if needed, or update if user is looking for it
+            if let jupiter = newTargets.first(where: { $0.object.name == "Jupiter" }) {
+                self.lastAzimuth = jupiter.az
+                self.lastAltitude = jupiter.alt
+            }
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if timer == nil {
-            calculateJupiterPosition() // Initial calculation once location is found
+            calculatePositions()
         }
     }
 }
