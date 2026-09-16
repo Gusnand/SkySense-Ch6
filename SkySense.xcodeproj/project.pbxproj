@@ -14,7 +14,6 @@
 		B4EA4A373059229B0006897E /* Exceptions for "SkySense" folder in "SkySense" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				documents/ImplementationPlan.md,
 			);
 			target = B4EA4A1F3059204B0006897E /* SkySense */;
 		};
@@ -25,7 +24,6 @@
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = B4EA4A1C3059204B0006897E /* Sources */;
 			membershipExceptions = (
-				documents/ImplementationPlan.md,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */

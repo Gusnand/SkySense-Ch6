@@ -157,9 +157,9 @@ struct ContentView: View {
             motionManager.stop()
             hapticManager.pause()
         }
-        .onChange(of: motionManager.deviceAzimuth) { _ in updateSensoryEngine() }
-        .onChange(of: motionManager.deviceAltitude) { _ in updateSensoryEngine() }
-        .onChange(of: selectedFilter) { _ in updateSensoryEngine() }
+        .onChange(of: motionManager.deviceAzimuth) { updateSensoryEngine() }
+        .onChange(of: motionManager.deviceAltitude) { updateSensoryEngine() }
+        .onChange(of: selectedFilter) { updateSensoryEngine() }
         .sheet(item: $selectedCelestialObject) { object in
             CelestialStorySheet(object: object)
                 .presentationBackground(.ultraThinMaterial)
