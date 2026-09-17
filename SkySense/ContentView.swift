@@ -87,7 +87,7 @@ struct ContentView: View {
                     // Top Empty space / status
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("3D AR Tracking Active")
+                            Text("")
                                 .font(.caption).bold().foregroundColor(.green)
                         }
                         .padding()
@@ -111,26 +111,29 @@ struct ContentView: View {
                     Spacer()
                     
                     // Bottom HUD (Category Pills and Toggle)
-                    HStack(spacing: 16) {
+                    ZStack {
                         CameraModeSelectorView(selectedFilter: $selectedFilter)
-                            .frame(maxWidth: .infinity)
+                            .frame(width: 200)
                         
-                        // Night Vision Toggle
-                        Button(action: {
-                            let impact = UIImpactFeedbackGenerator(style: .light)
-                            impact.impactOccurred()
-                            cameraManager.isNightVisionEnabled.toggle()
-                        }) {
-                            Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
-                                .font(.title3)
-                                .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
-                                .frame(width: 50, height: 50)
-                                .background(.ultraThinMaterial)
-                                .environment(\.colorScheme, .dark)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle().stroke(LinearGradient(colors: [.white.opacity(0.5), .clear, .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.5)
-                                )
+                        HStack {
+                            Spacer()
+                            // Night Vision Toggle
+                            Button(action: {
+                                let impact = UIImpactFeedbackGenerator(style: .light)
+                                impact.impactOccurred()
+                                cameraManager.isNightVisionEnabled.toggle()
+                            }) {
+                                Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
+                                    .font(.title3)
+                                    .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
+                                    .frame(width: 50, height: 50)
+                                    .background(.ultraThinMaterial)
+                                    .environment(\.colorScheme, .dark)
+                                    .clipShape(Circle())
+                                    .overlay(
+                                        Circle().stroke(LinearGradient(colors: [.white.opacity(0.5), .clear, .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.5)
+                                    )
+                            }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -447,7 +450,7 @@ struct CameraModeSelectorView: View {
     let filters: [(type: CelestialObjectType, name: String, icon: String)] = [
         (.planet, "Planets", "globe"),
         (.star, "Stars", "sparkles"),
-        (.satellite, "Satellites", "satellite")
+        (.satellite, "Satellites", "moon.circle")
     ]
     
     var scrollBinding: Binding<CelestialObjectType?> {
