@@ -3,7 +3,6 @@ import CoreLocation
 
 enum AstronomyMath {
     
-    /// Calculate Local Sidereal Time (LST) in degrees.
     static func localSiderealTime(date: Date, longitude: Double) -> Double {
         let jd = (date.timeIntervalSince1970 / 86400.0) + 2440587.5
         let t = (jd - 2451545.0) / 36525.0
@@ -17,7 +16,6 @@ enum AstronomyMath {
         return lst
     }
     
-    /// Convert Equatorial Coordinates (RA/Dec) to Horizontal Coordinates (Altitude/Azimuth)
     static func getAltAz(ra: Double, dec: Double, lat: Double, lst: Double) -> (alt: Double, az: Double) {
         var ha = lst - ra
         ha = ha.truncatingRemainder(dividingBy: 360.0)
@@ -42,7 +40,6 @@ enum AstronomyMath {
         return (alt: altitude, az: azimuth)
     }
     
-    /// Calculate angular distance between two spherical coordinates
     static func angularDistance(alt1: Double, az1: Double, alt2: Double, az2: Double) -> Double {
         let a1 = alt1 * .pi / 180.0
         let z1 = az1 * .pi / 180.0

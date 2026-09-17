@@ -126,6 +126,14 @@ struct ContentView: View {
                                     .foregroundColor(.white)
                                     .liquidGlass()
                             }
+                            Button(action: { selectedFilter = .satellite }) {
+                                Text("Satellites")
+                                    .fontWeight(selectedFilter == .satellite ? .bold : .medium)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .foregroundColor(.white)
+                                    .liquidGlass()
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -222,9 +230,9 @@ struct CelestialStorySheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .center, spacing: 16) {
-                    Image(systemName: object.type == .planet ? "circle.hexagonpath" : "sparkles")
+                    Image(systemName: object.type == .planet ? "circle.hexagonpath" : (object.type == .satellite ? "globe.americas" : "sparkles"))
                         .font(.largeTitle)
-                        .foregroundColor(object.type == .planet ? .orange : .cyan)
+                        .foregroundColor(object.type == .planet ? .orange : (object.type == .satellite ? .green : .cyan))
                         .shadow(color: .white.opacity(0.3), radius: 10)
                     
                     VStack(alignment: .leading) {
@@ -232,7 +240,7 @@ struct CelestialStorySheet: View {
                             .font(.title2.weight(.bold))
                             .foregroundColor(.white)
                         
-                        Text(object.type == .planet ? "Planet" : "Star")
+                        Text(object.type == .planet ? "Planet" : (object.type == .satellite ? "Satellite" : "Star"))
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.7))
                     }

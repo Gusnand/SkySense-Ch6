@@ -3,6 +3,7 @@ import Foundation
 enum CelestialObjectType: String {
     case star
     case planet
+    case satellite
 }
 
 struct CelestialObject: Identifiable {
@@ -10,21 +11,23 @@ struct CelestialObject: Identifiable {
     let name: String
     let type: CelestialObjectType
     let apparentMagnitude: Double
-    let ra: Double // Right Ascension in degrees
-    let dec: Double // Declination in degrees
+    var ra: Double // Right Ascension in degrees
+    var dec: Double // Declination in degrees
     let storyDescription: String
 }
 
 struct CelestialDatabase {
     static let objects: [CelestialObject] = [
-        CelestialObject(name: "Mercury", type: .planet, apparentMagnitude: 0.23, ra: 11.0, dec: 5.0, storyDescription: "The smallest planet, closest to the sun."),
-        CelestialObject(name: "Venus", type: .planet, apparentMagnitude: -4.14, ra: 23.0, dec: -15.0, storyDescription: "The hottest planet in our solar system."),
-        CelestialObject(name: "Mars", type: .planet, apparentMagnitude: -2.94, ra: 4.0, dec: 20.0, storyDescription: "The Red Planet, home to the largest volcano in the solar system."),
-        CelestialObject(name: "Jupiter", type: .planet, apparentMagnitude: -2.7, ra: 8.0, dec: 22.0, storyDescription: "The King of Storms. You are looking at a gas giant so large that 1,300 Earths could fit inside it."),
-        CelestialObject(name: "Saturn", type: .planet, apparentMagnitude: -0.49, ra: 22.0, dec: -12.0, storyDescription: "The Ringed Planet, with beautiful bands of ice and rock."),
-        CelestialObject(name: "Uranus", type: .planet, apparentMagnitude: 5.32, ra: 3.0, dec: 15.0, storyDescription: "An ice giant that rotates on its side."),
-        CelestialObject(name: "Neptune", type: .planet, apparentMagnitude: 7.78, ra: 23.5, dec: -4.0, storyDescription: "The windiest planet, deep blue in color."),
-        CelestialObject(name: "Pluto", type: .planet, apparentMagnitude: 14.0, ra: 20.0, dec: -22.0, storyDescription: "A dwarf planet in the Kuiper belt."),
+        CelestialObject(name: "Moon", type: .satellite, apparentMagnitude: -12.74, ra: 0.0, dec: 0.0, storyDescription: "Earth's only natural satellite."),
+        CelestialObject(name: "ISS", type: .satellite, apparentMagnitude: -2.0, ra: 0.0, dec: 0.0, storyDescription: "The International Space Station, a habitable artificial satellite in low Earth orbit."),
+        CelestialObject(name: "Mercury", type: .planet, apparentMagnitude: 0.23, ra: 0.0, dec: 0.0, storyDescription: "The smallest planet, closest to the sun."),
+        CelestialObject(name: "Venus", type: .planet, apparentMagnitude: -4.14, ra: 0.0, dec: 0.0, storyDescription: "The hottest planet in our solar system."),
+        CelestialObject(name: "Earth", type: .planet, apparentMagnitude: 0.0, ra: 0.0, dec: 0.0, storyDescription: "Our home planet."), // Included for math completeness, though observers on Earth won't see it in the sky.
+        CelestialObject(name: "Mars", type: .planet, apparentMagnitude: -2.94, ra: 0.0, dec: 0.0, storyDescription: "The Red Planet, home to the largest volcano in the solar system."),
+        CelestialObject(name: "Jupiter", type: .planet, apparentMagnitude: -2.7, ra: 0.0, dec: 0.0, storyDescription: "The King of Storms. You are looking at a gas giant so large that 1,300 Earths could fit inside it."),
+        CelestialObject(name: "Saturn", type: .planet, apparentMagnitude: -0.49, ra: 0.0, dec: 0.0, storyDescription: "The Ringed Planet, with beautiful bands of ice and rock."),
+        CelestialObject(name: "Uranus", type: .planet, apparentMagnitude: 5.32, ra: 0.0, dec: 0.0, storyDescription: "An ice giant that rotates on its side."),
+        CelestialObject(name: "Neptune", type: .planet, apparentMagnitude: 7.78, ra: 0.0, dec: 0.0, storyDescription: "The windiest planet, deep blue in color."),
         CelestialObject(name: "Sirius", type: .star, apparentMagnitude: -1.46, ra: 101.287, dec: -16.716, storyDescription: "The brightest star in the night sky. Also known as the Dog Star."),
         CelestialObject(name: "Canopus", type: .star, apparentMagnitude: -0.74, ra: 95.987, dec: -52.695, storyDescription: "The second-brightest star in the night sky."),
         CelestialObject(name: "Rigil Kentaurus", type: .star, apparentMagnitude: -0.27, ra: 219.902, dec: -60.833, storyDescription: "Part of the Alpha Centauri system, our closest stellar neighbors."),
