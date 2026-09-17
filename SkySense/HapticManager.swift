@@ -1,6 +1,7 @@
 import Foundation
 import CoreHaptics
 import Combine
+import UIKit
 
 class HapticManager: ObservableObject {
     private var engine: CHHapticEngine?
@@ -18,6 +19,18 @@ class HapticManager: ObservableObject {
     
     init() {
         prepareHaptics()
+        NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.restartEngine()
+        }
+    }
+    
+    func restartEngine() {
+        do {
+            try engine?.start()
+            isEngineReady = true
+        } catch {
+            print("Failed to restart engine: \(error)")
+        }
     }
     
     private func prepareHaptics() {
