@@ -137,6 +137,8 @@ struct ContentView: View {
                 }
             }
             .preferredColorScheme(.dark)
+            .colorMultiply(cameraManager.isNightVisionEnabled ? .red : .white)
+            .animation(.easeInOut, value: cameraManager.isNightVisionEnabled)
             .onAppear {
                 astronomyEngine.startTracking()
                 motionManager.start()
@@ -154,6 +156,8 @@ struct ContentView: View {
                     .preferredColorScheme(.dark)
                     .presentationDetents([.fraction(0.4), .large], selection: $selectedDetent)
                     .presentationDragIndicator(.visible)
+                    .colorMultiply(cameraManager.isNightVisionEnabled ? .red : .white)
+                    .animation(.easeInOut, value: cameraManager.isNightVisionEnabled)
                     .onAppear {
                         cameraManager.pause()
                         hapticManager.pause()
