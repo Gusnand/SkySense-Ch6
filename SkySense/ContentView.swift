@@ -256,9 +256,8 @@ struct CelestialStorySheet: View {
     let object: CelestialObject
     @Binding var selectedDetent: PresentationDetent
     @Environment(\.dismiss) var dismiss
-    
-    @State private var isDoYouKnowExpanded = true
-    @State private var isFunFactExpanded = true
+    @State private var isDoYouKnowExpanded = false
+    @State private var isFunFactExpanded = false
     
     var body: some View {
         let content = CelestialContentDatabase.content.first { $0.name == object.name }
