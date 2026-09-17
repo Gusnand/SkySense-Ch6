@@ -22,7 +22,6 @@ struct CelestialDatabase {
         CelestialObject(name: "ISS", type: .satellite, apparentMagnitude: -2.0, ra: 0.0, dec: 0.0, storyDescription: "The International Space Station, a habitable artificial satellite in low Earth orbit."),
         CelestialObject(name: "Mercury", type: .planet, apparentMagnitude: 0.23, ra: 0.0, dec: 0.0, storyDescription: "The smallest planet, closest to the sun."),
         CelestialObject(name: "Venus", type: .planet, apparentMagnitude: -4.14, ra: 0.0, dec: 0.0, storyDescription: "The hottest planet in our solar system."),
-        CelestialObject(name: "Earth", type: .planet, apparentMagnitude: 0.0, ra: 0.0, dec: 0.0, storyDescription: "Our home planet."), // Included for math completeness, though observers on Earth won't see it in the sky.
         CelestialObject(name: "Mars", type: .planet, apparentMagnitude: -2.94, ra: 0.0, dec: 0.0, storyDescription: "The Red Planet, home to the largest volcano in the solar system."),
         CelestialObject(name: "Jupiter", type: .planet, apparentMagnitude: -2.7, ra: 0.0, dec: 0.0, storyDescription: "The King of Storms. You are looking at a gas giant so large that 1,300 Earths could fit inside it."),
         CelestialObject(name: "Saturn", type: .planet, apparentMagnitude: -0.49, ra: 0.0, dec: 0.0, storyDescription: "The Ringed Planet, with beautiful bands of ice and rock."),

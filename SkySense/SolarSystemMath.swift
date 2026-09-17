@@ -65,6 +65,7 @@ enum SolarSystemMath {
         default: return nil
         }
         
+        // Step A: Calculate the Heliocentric Cartesian coordinates (x, y, z) of the Target Planet for the current Julian Date.
         let E = computeEccentricAnomaly(M: M, e: e)
         let ERad = E * .pi / 180.0
         
@@ -83,11 +84,12 @@ enum SolarSystemMath {
         let yh = r * (sin(NRad) * cos(lRad) + cos(NRad) * sin(lRad) * cos(iRad))
         let zh = r * (sin(lRad) * sin(iRad))
         
-        // Earth coordinates for geocentric calc
+        // Step B: Calculate the Heliocentric Cartesian coordinates (x, y, z) of the Earth for the current Julian Date.
         let e_a = 1.00000
         let e_e = 0.016709 - 1.151E-9 * d
         let e_M = 356.0470 + 0.9856002585 * d
-        let e_w = 282.9404 + 4.70935E-5 * d
+        // Earth's longitude of perihelion is the Sun's longitude of perihelion (282.9404) minus 180 degrees.
+        let e_w = 102.9404 + 4.70935E-5 * d
         
         let e_E = computeEccentricAnomaly(M: e_M, e: e_e)
         let e_ERad = e_E * .pi / 180.0
@@ -103,10 +105,12 @@ enum SolarSystemMath {
         let ye = e_r * sin(e_lRad)
         let ze = 0.0
         
+        // Step C (Geocentric Translation): Subtract Earth's coordinates from the Planet's coordinates.
         let xg = xh - xe
         let yg = yh - ye
         let zg = zh - ze
         
+        // Step D (Ecliptic to Equatorial): Apply the Obliquity of the Ecliptic
         let ecl = 23.4393 - 3.563E-7 * d
         let eclRad = ecl * .pi / 180.0
         
@@ -119,6 +123,7 @@ enum SolarSystemMath {
         
         if ra < 0 { ra += 360.0 }
         
+        // Step E: Pass this correctly calculated RA/Dec back to the engine.
         return (ra: ra, dec: dec)
     }
     

@@ -49,16 +49,6 @@ struct CelestialContentDatabase {
             realityParagraph: "Landing on Venus is like stepping into a pressure cooker filled with battery acid. The air is so thick it feels like walking through deep water, and the crushing weight of the toxic atmosphere would snap a submarine in half."
         ),
         CelestialContent(
-            name: "Earth",
-            category: "Planet",
-            personaSubtitle: "The Oasis",
-            stat1: "💧 Covered 71% by water",
-            stat2: "🛡️ Shielded by a magnetic bubble",
-            stat3: "🧬 Teeming with life",
-            mythParagraph: "Early humans didn't even realize they were living on a planet. To them, this was the entire universe—a vast, flat expanse held up by giant turtles, elephants, or tree roots, sitting at the very center of everything.",
-            realityParagraph: "You know exactly what it feels like—the breeze on your skin and the smell of rain. But from space, it's a fragile, glowing blue marble hanging in a vast, terrifyingly empty void, the only known lifeboat for millions of miles."
-        ),
-        CelestialContent(
             name: "Mars",
             category: "Planet",
             personaSubtitle: "The Rusty Desert",
