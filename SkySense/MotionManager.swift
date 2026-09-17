@@ -18,15 +18,20 @@ class MotionManager: ObservableObject {
             guard let data = data else { return }
             
             let attitude = data.attitude
+            let rm = attitude.rotationMatrix
             
-            // Map Yaw to Azimuth (0-360)
-            // In CoreMotion, yaw is counter-clockwise? Let's normalize it to standard compass azimuth.
-            var az = -attitude.yaw * 180.0 / .pi
+            // The back camera points in the -Z direction of the device's local frame.
+            // We transform the local vector (0, 0, -1) to the world frame (.xTrueNorthZVertical).
+            let vx = -rm.m13
+            let vy = -rm.m23
+            let vz = -rm.m33
+            
+            // Altitude is the angle above the horizontal plane
+            let alt = asin(vz) * 180.0 / .pi
+            
+            // Azimuth is the angle from True North (+X) towards East (-Y)
+            var az = atan2(-vy, vx) * 180.0 / .pi
             if az < 0 { az += 360.0 }
-            
-            // Map Pitch to Altitude (-90 to 90)
-            // Simplistic mapping for holding phone in portrait orientation
-            let alt = attitude.pitch * 180.0 / .pi
             
             self?.deviceAzimuth = az
             self?.deviceAltitude = alt

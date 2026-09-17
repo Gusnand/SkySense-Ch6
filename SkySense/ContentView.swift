@@ -20,17 +20,6 @@ struct ContentView: View {
             // 1. Raw Camera Background
             CameraPreviewView(session: cameraManager.session)
                 .edgesIgnoringSafeArea(.all)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            alignmentOffsetAzimuth = dragStartAzimuth - Double(value.translation.width) * 0.1
-                            alignmentOffsetAltitude = dragStartAltitude + Double(value.translation.height) * 0.1
-                        }
-                        .onEnded { _ in
-                            dragStartAzimuth = alignmentOffsetAzimuth
-                            dragStartAltitude = alignmentOffsetAltitude
-                        }
-                )
             
             // 2. Nearest UI Layer
             if let nearest = getNearestTarget() {
