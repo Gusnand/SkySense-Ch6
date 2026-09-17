@@ -182,13 +182,18 @@ struct ContentView: View {
     private func getDeviceVector(alt: Double, az: Double, rm: CMRotationMatrix) -> (dx: Double, dy: Double, dz: Double) {
         let altRad = alt * .pi / 180.0
         let azRad = az * .pi / 180.0
-        let x = cos(altRad) * sin(azRad)
-        let y = cos(altRad) * cos(azRad)
-        let z = sin(altRad)
         
-        let localX = rm.m11 * x + rm.m21 * y + rm.m31 * z
-        let localY = rm.m12 * x + rm.m22 * y + rm.m32 * z
-        let localZ = -(rm.m13 * x + rm.m23 * y + rm.m33 * z)
+        let east = cos(altRad) * sin(azRad)
+        let north = cos(altRad) * cos(azRad)
+        let up = sin(altRad)
+        
+        let worldX = north
+        let worldY = -east
+        let worldZ = up
+        
+        let localX = rm.m11 * worldX + rm.m21 * worldY + rm.m31 * worldZ
+        let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
+        let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
         
         return (dx: localX, dy: localY, dz: localZ)
     }
@@ -239,6 +244,8 @@ struct CelestialStorySheet: View {
     let object: CelestialObject
     
     var body: some View {
+        let content = CelestialContentDatabase.content.first { $0.name == object.name }
+        
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .center, spacing: 16) {
@@ -252,47 +259,43 @@ struct CelestialStorySheet: View {
                             .font(.title2.weight(.bold))
                             .foregroundColor(.white)
                         
-                        Text(object.type == .planet ? "Planet" : (object.type == .satellite ? "Satellite" : "Star"))
+                        Text(content?.personaSubtitle ?? (object.type == .planet ? "Planet" : (object.type == .satellite ? "Satellite" : "Star")))
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 .padding(.top, 20)
                 
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading) {
-                        Text("Magnitude")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(String(format: "%.2f", object.apparentMagnitude))
-                            .font(.headline)
-                            .foregroundColor(.white)
+                if let content = content {
+                    HStack(spacing: 15) {
+                        Text(content.stat1).font(.caption).foregroundColor(.white.opacity(0.8))
+                        Text(content.stat2).font(.caption).foregroundColor(.white.opacity(0.8))
+                        Text(content.stat3).font(.caption).foregroundColor(.white.opacity(0.8))
                     }
+                    .padding(.vertical, 10)
                     
-                    VStack(alignment: .leading) {
-                        Text("Right Ascension")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(String(format: "%.1f°", object.ra))
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    }
+                    Text(content.mythParagraph)
+                        .font(.body.weight(.medium))
+                        .foregroundColor(.white.opacity(0.95))
+                        .lineSpacing(6)
                     
-                    VStack(alignment: .leading) {
-                        Text("Declination")
+                    Text(content.realityParagraph)
+                        .font(.body.weight(.medium))
+                        .foregroundColor(.white.opacity(0.95))
+                        .lineSpacing(6)
+                } else {
+                    HStack(spacing: 15) {
+                        Text("Magnitude: \(String(format: "%.2f", object.apparentMagnitude))")
                             .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(String(format: "%.1f°", object.dec))
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(.white.opacity(0.8))
                     }
+                    .padding(.vertical, 10)
+                    
+                    Text(object.storyDescription)
+                        .font(.body.weight(.medium))
+                        .foregroundColor(.white.opacity(0.95))
+                        .lineSpacing(6)
                 }
-                .padding(.vertical, 10)
-                
-                Text(object.storyDescription)
-                    .font(.body.weight(.medium))
-                    .foregroundColor(.white.opacity(0.95))
-                    .lineSpacing(6)
                 
                 Spacer()
             }

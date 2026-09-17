@@ -57,26 +57,30 @@ enum AstronomyMath {
         let altRad = alt * .pi / 180.0
         let azRad = az * .pi / 180.0
         
-        // 1. Convert Target to 3D Cartesian Vector (East-North-Up)
-        let x = cos(altRad) * sin(azRad)
-        let y = cos(altRad) * cos(azRad)
-        let z = sin(altRad)
+        // 1. Calculate Celestial Vector
+        let east = cos(altRad) * sin(azRad)
+        let north = cos(altRad) * cos(azRad)
+        let up = sin(altRad)
         
-        // 2. Apply Device Attitude Matrix (inverse)
-        let localX = rm.m11 * x + rm.m21 * y + rm.m31 * z
-        let localY = rm.m12 * x + rm.m22 * y + rm.m32 * z
-        // localZ is negated so positive means it is in front of the camera
-        let localZ = -(rm.m13 * x + rm.m23 * y + rm.m33 * z)
+        // 2. Map to CoreMotion World Reference (X: North, Y: West, Z: Up)
+        let worldX = north
+        let worldY = -east
+        let worldZ = up
+        
+        // 3. Apply Device Attitude Matrix (inverse)
+        let localX = rm.m11 * worldX + rm.m21 * worldY + rm.m31 * worldZ
+        let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
+        let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
         
         // 3. Behind-Camera Clipping
         if localZ < 0 { return nil }
         
-        // 4. Trigonometric 2D Projection with FOV
-        let fovH = 70.0 * .pi / 180.0
-        let fovV = 60.0 * .pi / 180.0
+        // 4. Uniform Trigonometric 2D Projection
+        let fov = 60.0 * .pi / 180.0
+        let focalLength = max(screenSize.width, screenSize.height) / (2.0 * tan(fov / 2.0))
         
-        let screenX = (screenSize.width / 2.0) + (localX / localZ) * (screenSize.width / (2.0 * tan(fovH / 2.0)))
-        let screenY = (screenSize.height / 2.0) - (localY / localZ) * (screenSize.height / (2.0 * tan(fovV / 2.0)))
+        let screenX = (screenSize.width / 2.0) + (localX / localZ) * focalLength
+        let screenY = (screenSize.height / 2.0) - (localY / localZ) * focalLength
         
         return CGPoint(x: screenX, y: screenY)
     }
