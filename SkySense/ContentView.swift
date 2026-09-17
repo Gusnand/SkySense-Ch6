@@ -178,24 +178,40 @@ struct ContentView: View {
         }
     }
     
-    // Calculates the 3D vector of a celestial object in the device's local coordinate system.
     private func getDeviceVector(alt: Double, az: Double, rm: CMRotationMatrix) -> (dx: Double, dy: Double, dz: Double) {
         let altRad = alt * .pi / 180.0
         let azRad = az * .pi / 180.0
         
-        let east = cos(altRad) * sin(azRad)
-        let north = cos(altRad) * cos(azRad)
-        let up = sin(altRad)
-        
-        let worldX = north
-        let worldY = -east
-        let worldZ = up
+        let worldX = cos(altRad) * cos(azRad)
+        let worldY = -cos(altRad) * sin(azRad)
+        let worldZ = sin(altRad)
         
         let localX = rm.m11 * worldX + rm.m21 * worldY + rm.m31 * worldZ
         let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
         let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
         
-        return (dx: localX, dy: localY, dz: localZ)
+        let orientation = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.interfaceOrientation ?? .portrait
+        
+        var adjX = localX
+        var adjY = localY
+        
+        switch orientation {
+        case .landscapeLeft:
+            adjX = -localY
+            adjY = localX
+        case .landscapeRight:
+            adjX = localY
+            adjY = -localX
+        case .portraitUpsideDown:
+            adjX = -localX
+            adjY = -localY
+        default:
+            break
+        }
+        
+        return (dx: adjX, dy: adjY, dz: localZ)
     }
     
     // Finds the target that is closest to the center of the camera (-Z axis).

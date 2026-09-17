@@ -1,6 +1,8 @@
 import Foundation
 import CoreLocation
 import CoreMotion
+import UIKit
+import CoreMotion
 
 enum AstronomyMath {
     
@@ -72,15 +74,36 @@ enum AstronomyMath {
         let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
         let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
         
-        // 3. Behind-Camera Clipping
         if localZ < 0 { return nil }
         
-        // 4. Uniform Trigonometric 2D Projection
+        // 4. Interface Orientation Compensation
+        let orientation = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.interfaceOrientation ?? .portrait
+        
+        var adjX = localX
+        var adjY = localY
+        
+        switch orientation {
+        case .landscapeLeft:
+            adjX = -localY
+            adjY = localX
+        case .landscapeRight:
+            adjX = localY
+            adjY = -localX
+        case .portraitUpsideDown:
+            adjX = -localX
+            adjY = -localY
+        default:
+            break
+        }
+        
+        // 5. Uniform Trigonometric 2D Projection
         let fov = 60.0 * .pi / 180.0
         let focalLength = max(screenSize.width, screenSize.height) / (2.0 * tan(fov / 2.0))
         
-        let screenX = (screenSize.width / 2.0) + (localX / localZ) * focalLength
-        let screenY = (screenSize.height / 2.0) - (localY / localZ) * focalLength
+        let screenX = (screenSize.width / 2.0) + (adjX / localZ) * focalLength
+        let screenY = (screenSize.height / 2.0) - (adjY / localZ) * focalLength
         
         return CGPoint(x: screenX, y: screenY)
     }
