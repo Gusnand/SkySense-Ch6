@@ -83,8 +83,31 @@ struct ContentView: View {
             
             // 3. Heads Up UI Overlay
             VStack {
-                // Top HUD
+                // Top Empty space / status
                 HStack {
+                    VStack(alignment: .leading) {
+                        Text("Calibrated Drift")
+                            .font(.caption).bold().foregroundColor(.gray)
+                        Text("Az: \(alignmentOffsetAzimuth, specifier: "%.1f")° | Alt: \(alignmentOffsetAltitude, specifier: "%.1f")°")
+                            .font(.caption)
+                    }
+                    .foregroundColor(.white)
+                    Spacer()
+                }
+                .padding()
+                .padding(.top, 50)
+                
+                Spacer()
+                
+                // Reticle / Crosshair in Center
+                Image(systemName: "plus")
+                    .font(.system(size: 40, weight: .ultraLight))
+                    .foregroundColor(.white.opacity(0.5))
+                
+                Spacer()
+                
+                // Bottom HUD (Category Pills and Toggle)
+                HStack(alignment: .bottom) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             Button(action: { selectedFilter = .planet }) {
@@ -121,31 +144,10 @@ struct ContentView: View {
                     }
                     .padding(.trailing)
                 }
-                .padding(.top, 50)
-                
-                Spacer()
-                
-                // Reticle / Crosshair in Center
-                Image(systemName: "plus")
-                    .font(.system(size: 40, weight: .ultraLight))
-                    .foregroundColor(.white.opacity(0.5))
-                
-                Spacer()
-                
-                // Minimal Status Footer
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Calibrated Drift")
-                            .font(.caption).bold().foregroundColor(.gray)
-                        Text("Az: \(alignmentOffsetAzimuth, specifier: "%.1f")° | Alt: \(alignmentOffsetAltitude, specifier: "%.1f")°")
-                            .font(.caption)
-                    }
-                    .foregroundColor(.white)
-                    Spacer()
-                }
-                .padding()
+                .padding(.bottom, 30)
             }
         }
+        .preferredColorScheme(.dark)
         .onAppear {
             dragStartAzimuth = alignmentOffsetAzimuth
             dragStartAltitude = alignmentOffsetAltitude
@@ -217,33 +219,65 @@ struct CelestialStorySheet: View {
     let object: CelestialObject
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .center, spacing: 16) {
-                Image(systemName: object.type == .planet ? "circle.hexagonpath" : "sparkles")
-                    .font(.system(size: 40))
-                    .foregroundColor(object.type == .planet ? .orange : .cyan)
-                    .shadow(color: .white.opacity(0.3), radius: 10)
-                
-                VStack(alignment: .leading) {
-                    Text(object.name)
-                        .font(.title2.weight(.bold))
-                        .foregroundColor(.white)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(alignment: .center, spacing: 16) {
+                    Image(systemName: object.type == .planet ? "circle.hexagonpath" : "sparkles")
+                        .font(.largeTitle)
+                        .foregroundColor(object.type == .planet ? .orange : .cyan)
+                        .shadow(color: .white.opacity(0.3), radius: 10)
                     
-                    Text(object.type == .planet ? "Planet" : "Star")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
+                    VStack(alignment: .leading) {
+                        Text(object.name)
+                            .font(.title2.weight(.bold))
+                            .foregroundColor(.white)
+                        
+                        Text(object.type == .planet ? "Planet" : "Star")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
                 }
+                .padding(.top, 20)
+                
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading) {
+                        Text("Magnitude")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                        Text(String(format: "%.2f", object.apparentMagnitude))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Right Ascension")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                        Text(String(format: "%.1f°", object.ra))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Declination")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                        Text(String(format: "%.1f°", object.dec))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.vertical, 10)
+                
+                Text(object.storyDescription)
+                    .font(.body.weight(.medium))
+                    .foregroundColor(.white.opacity(0.95))
+                    .lineSpacing(6)
+                
+                Spacer()
             }
-            .padding(.top, 20)
-            
-            Text(object.storyDescription)
-                .font(.body.weight(.medium))
-                .foregroundColor(.white.opacity(0.95))
-                .lineSpacing(6)
-            
-            Spacer()
+            .padding(30)
         }
-        .padding(30)
     }
 }
 

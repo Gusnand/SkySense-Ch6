@@ -45,3 +45,22 @@
 * **Visual Theme:** The app must feel like a native, futuristic iOS intelligence feature. It completely avoids flat, opaque colors. 
 * **Clickable Elements:** All buttons, pills, and tooltips must use heavy background blurs (`ultraThinMaterial`), subtle glowing borders, and drop shadows to ensure they remain highly legible against both pitch-black skies and bright city lights.
 * **Bottom Sheet:** When triggered, the informational sheet must inherit a vibrant, translucent blur that allows the underlying camera feed to softly bleed through the background, maintaining spatial context rather than blocking the screen with a solid dark sheet.
+
+## 4. HIG Compliance & iOS Best Practices
+The app must strictly adhere to Apple Human Interface Guidelines regarding privacy, ergonomics, and accessibility.
+
+### 4.1 Privacy & On-Device Processing
+* **Local Processing:** All astronomical calculations (Alt/Az math) must be done natively on-device. No location data or camera feeds will be sent to external servers.
+* **Permissions Flow:** The app requires Camera and Location access at launch to function. 
+* **Plist Strings:** The `Info.plist` must use these exact purpose strings (Sentence case, complete sentences):
+  * `NSCameraUsageDescription`: "SkySense uses your camera as a viewfinder to layer celestial information over the night sky."
+  * `NSLocationWhenInUseUsageDescription`: "SkySense uses your location to calculate precisely which stars and planets are currently above you."
+
+### 4.2 Ergonomics & Interactions (Thumb-Zone Design)
+* **Bottom-Heavy UI:** All interactive controls (Category Pills) must be placed at the bottom of the screen to accommodate one-handed usage when the phone is held up at the sky.
+* **Gestures:** The modal bottom sheet must be dismissible via a natural downward swipe gesture. Do not rely exclusively on top-corner "Close" buttons.
+
+### 4.3 Appearance & Accessibility
+* **Forced Dark Mode:** The app must force `.preferredColorScheme(.dark)` across all views. Emitting a bright white screen in an astronomy app destroys the user's night vision.
+* **Dynamic Type:** All text within the bottom sheet (Stories, Quick Stats) must support iOS Dynamic Type so the text scales automatically with the user's system accessibility settings.
+* **Orientation:** The app UI (tooltips, pills) should dynamically support both Portrait and Landscape orientations, as users frequently rotate their devices when scanning the sky.

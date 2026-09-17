@@ -10,31 +10,9 @@
 		B4EA4A203059204B0006897E /* SkySense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkySense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B4EA4A373059229B0006897E /* Exceptions for "SkySense" folder in "SkySense" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-			);
-			target = B4EA4A1F3059204B0006897E /* SkySense */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		B4EA4A383059229B0006897E /* Exceptions for "SkySense" folder in "Compile Sources" phase from "SkySense" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = B4EA4A1C3059204B0006897E /* Sources */;
-			membershipExceptions = (
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B4EA4A223059204B0006897E /* SkySense */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B4EA4A373059229B0006897E /* Exceptions for "SkySense" folder in "SkySense" target */,
-				B4EA4A383059229B0006897E /* Exceptions for "SkySense" folder in "Compile Sources" phase from "SkySense" target */,
-			);
 			path = SkySense;
 			sourceTree = "<group>";
 		};
@@ -270,10 +248,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SkySense;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SkySense requires camera access to use the viewfinder.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "SkySense uses your camera as a viewfinder to layer celestial information over the night sky.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SkySense uses your location to calculate precisely which stars and planets are currently above you.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -306,10 +286,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SkySense;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SkySense requires camera access to use the viewfinder.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "SkySense uses your camera as a viewfinder to layer celestial information over the night sky.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SkySense uses your location to calculate precisely which stars and planets are currently above you.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
