@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreMotion
 
 struct ContentView: View {
     @StateObject private var astronomyEngine = AstronomyEngine()
@@ -6,211 +7,233 @@ struct ContentView: View {
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var hapticManager = HapticManager()
     
-    @State private var alignmentOffsetAzimuth: Double = 0.0
-    @State private var alignmentOffsetAltitude: Double = 0.0
-    
-    @State private var dragStartAzimuth: Double = 0.0
-    @State private var dragStartAltitude: Double = 0.0
-    
     @State private var selectedFilter: CelestialObjectType = .planet
     @State private var selectedCelestialObject: CelestialObject?
     
     var body: some View {
-        ZStack {
-            // 1. Raw Camera Background
-            CameraPreviewView(session: cameraManager.session)
-                .edgesIgnoringSafeArea(.all)
-            
-            // 2. Nearest UI Layer
-            if let nearest = getNearestTarget() {
-                let calibratedAz = motionManager.deviceAzimuth + alignmentOffsetAzimuth
-                let calibratedAlt = motionManager.deviceAltitude + alignmentOffsetAltitude
+        GeometryReader { geometry in
+            ZStack {
+                // 1. Raw Camera Background
+                CameraPreviewView(session: cameraManager.session)
+                    .edgesIgnoringSafeArea(.all)
                 
-                let dist = AstronomyMath.angularDistance(
-                    alt1: calibratedAlt, az1: calibratedAz,
-                    alt2: nearest.alt, az2: nearest.az
-                )
+                // 2. 3D AR Projections
+                if let rm = motionManager.rotationMatrix {
+                    let filteredTargets = astronomyEngine.activeTargets.filter { $0.object.type == selectedFilter }
+                    
+                    // Render dots for all targets in FOV
+                    ForEach(filteredTargets, id: \.object.id) { target in
+                        if let point = AstronomyMath.project(alt: target.alt, az: target.az, rm: rm, screenSize: geometry.size) {
+                            Circle()
+                                .fill(Color.white.opacity(0.8))
+                                .frame(width: 8, height: 8)
+                                .shadow(color: .white, radius: 4)
+                                .position(point)
+                            
+                            Text(target.object.name)
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.8))
+                                .position(x: point.x, y: point.y - 15)
+                        }
+                    }
+                    
+                    // Nearest Target logic
+                    if let nearest = getNearestTarget(targets: filteredTargets, rm: rm) {
+                        let vec = getDeviceVector(alt: nearest.alt, az: nearest.az, rm: rm)
+                        let isLocked = isTargetLocked(target: nearest, rm: rm, size: geometry.size)
+                        
+                        if isLocked {
+                            // TARGET IN FOV -> Render the "Locked" Tooltip
+                            VStack {
+                                Spacer()
+                                Button(action: {
+                                    selectedCelestialObject = nearest.object
+                                }) {
+                                    VStack(spacing: 4) {
+                                        Text(nearest.object.name)
+                                            .font(.headline).bold()
+                                            .foregroundColor(.white)
+                                        Text("Locked")
+                                            .font(.caption)
+                                            .foregroundColor(.white.opacity(0.8))
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .liquidGlass()
+                                }
+                                Spacer()
+                            }
+                        } else {
+                            // TARGET OFF CENTER -> Render Directional Edge Arrow
+                            // In screen space: +X is right, +Y is DOWN (so device +Y is screen -Y)
+                            let angle = atan2(-vec.dy, vec.dx)
+                            
+                            Image(systemName: "location.north.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                                .shadow(color: .white, radius: 5)
+                                // Arrow points UP normally. Rotate it +90 to point RIGHT (0 radians)
+                                .rotationEffect(.radians(angle + .pi / 2.0))
+                                .offset(x: cos(angle) * 150, y: sin(angle) * 150)
+                        }
+                    }
+                }
                 
-                if dist < 8.0 {
-                    // TARGET IN FOV -> Render the "Locked" Tooltip
-                    VStack {
+                // 3. Heads Up UI Overlay
+                VStack {
+                    // Top Empty space / status
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("3D AR Tracking Active")
+                                .font(.caption).bold().foregroundColor(.green)
+                        }
+                        .padding()
+                        .padding(.top, 50)
                         Spacer()
+                    }
+                    
+                    Spacer()
+                    
+                    // Reticle / Crosshair in Center
+                    Image(systemName: "plus")
+                        .font(.system(size: 40, weight: .ultraLight))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Spacer()
+                    
+                    // Bottom HUD (Category Pills and Toggle)
+                    HStack(alignment: .bottom) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                Button(action: { selectedFilter = .planet }) {
+                                    Text("Planets")
+                                        .fontWeight(selectedFilter == .planet ? .bold : .medium)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .foregroundColor(.white)
+                                        .liquidGlass()
+                                }
+                                Button(action: { selectedFilter = .star }) {
+                                    Text("Bright Stars")
+                                        .fontWeight(selectedFilter == .star ? .bold : .medium)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .foregroundColor(.white)
+                                        .liquidGlass()
+                                }
+                                Button(action: { selectedFilter = .satellite }) {
+                                    Text("Satellites")
+                                        .fontWeight(selectedFilter == .satellite ? .bold : .medium)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .foregroundColor(.white)
+                                        .liquidGlass()
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        
+                        Spacer()
+                        
+                        // Night Vision Toggle
                         Button(action: {
-                            selectedCelestialObject = nearest.object
+                            cameraManager.isNightVisionEnabled.toggle()
                         }) {
-                            VStack(spacing: 4) {
-                                Text(nearest.object.name)
-                                    .font(.headline).bold()
-                                    .foregroundColor(.white)
-                                Text("Locked (\(String(format: "%.1f", dist))°)")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .liquidGlass()
+                            Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
+                                .font(.title3)
+                                .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
+                                .padding(12)
+                                .liquidGlass()
                         }
-                        Spacer()
+                        .padding(.trailing)
                     }
-                } else {
-                    // TARGET OFF SCREEN -> Render Directional Edge Arrow
-                    let angle = angleToTarget(
-                        deviceAz: calibratedAz,
-                        deviceAlt: calibratedAlt,
-                        targetAz: nearest.az,
-                        targetAlt: nearest.alt
-                    )
-                    
-                    Image(systemName: "location.north.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(color: .white, radius: 5)
-                        .rotationEffect(.degrees(90 - angle))
-                        .offset(x: cos(angle * .pi / 180) * 150, y: -sin(angle * .pi / 180) * 150)
+                    .padding(.bottom, 30)
                 }
             }
-            
-            // 3. Heads Up UI Overlay
-            VStack {
-                // Top Empty space / status
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Calibrated Drift")
-                            .font(.caption).bold().foregroundColor(.gray)
-                        Text("Az: \(alignmentOffsetAzimuth, specifier: "%.1f")° | Alt: \(alignmentOffsetAltitude, specifier: "%.1f")°")
-                            .font(.caption)
+            .preferredColorScheme(.dark)
+            .onAppear {
+                astronomyEngine.startTracking()
+                motionManager.start()
+            }
+            .onDisappear {
+                astronomyEngine.stopTracking()
+                motionManager.stop()
+                hapticManager.pause()
+            }
+            .onChange(of: motionManager.deviceAzimuth) { _ in updateSensoryEngine(geometry: geometry) }
+            .onChange(of: selectedFilter) { _ in updateSensoryEngine(geometry: geometry) }
+            .sheet(item: $selectedCelestialObject) { object in
+                CelestialStorySheet(object: object)
+                    .presentationBackground(.ultraThinMaterial)
+                    .preferredColorScheme(.dark)
+                    .presentationDetents([.fraction(0.4), .large])
+                    .onAppear {
+                        cameraManager.pause()
+                        hapticManager.pause()
                     }
-                    .foregroundColor(.white)
-                    Spacer()
-                }
-                .padding()
-                .padding(.top, 50)
-                
-                Spacer()
-                
-                // Reticle / Crosshair in Center
-                Image(systemName: "plus")
-                    .font(.system(size: 40, weight: .ultraLight))
-                    .foregroundColor(.white.opacity(0.5))
-                
-                Spacer()
-                
-                // Bottom HUD (Category Pills and Toggle)
-                HStack(alignment: .bottom) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            Button(action: { selectedFilter = .planet }) {
-                                Text("Planets")
-                                    .fontWeight(selectedFilter == .planet ? .bold : .medium)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .foregroundColor(.white)
-                                    .liquidGlass()
-                            }
-                            Button(action: { selectedFilter = .star }) {
-                                Text("Bright Stars")
-                                    .fontWeight(selectedFilter == .star ? .bold : .medium)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .foregroundColor(.white)
-                                    .liquidGlass()
-                            }
-                            Button(action: { selectedFilter = .satellite }) {
-                                Text("Satellites")
-                                    .fontWeight(selectedFilter == .satellite ? .bold : .medium)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .foregroundColor(.white)
-                                    .liquidGlass()
-                            }
-                        }
-                        .padding(.horizontal)
+                    .onDisappear {
+                        cameraManager.resume()
                     }
-                    
-                    Spacer()
-                    
-                    // Night Vision Toggle
-                    Button(action: {
-                        cameraManager.isNightVisionEnabled.toggle()
-                    }) {
-                        Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
-                            .font(.title3)
-                            .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
-                            .padding(12)
-                            .liquidGlass()
-                    }
-                    .padding(.trailing)
-                }
-                .padding(.bottom, 30)
             }
         }
-        .preferredColorScheme(.dark)
-        .onAppear {
-            dragStartAzimuth = alignmentOffsetAzimuth
-            dragStartAltitude = alignmentOffsetAltitude
-            astronomyEngine.startTracking()
-            motionManager.start()
-        }
-        .onDisappear {
-            astronomyEngine.stopTracking()
-            motionManager.stop()
-            hapticManager.pause()
-        }
-        .onChange(of: motionManager.deviceAzimuth) { updateSensoryEngine() }
-        .onChange(of: motionManager.deviceAltitude) { updateSensoryEngine() }
-        .onChange(of: selectedFilter) { updateSensoryEngine() }
-        .sheet(item: $selectedCelestialObject) { object in
-            CelestialStorySheet(object: object)
-                .presentationBackground(.ultraThinMaterial)
-                .preferredColorScheme(.dark)
-                .presentationDetents([.fraction(0.4), .large])
-                .onAppear {
-                    cameraManager.pause()
-                    hapticManager.pause()
-                }
-                .onDisappear {
-                    cameraManager.resume()
-                }
+    }
+    
+    // Calculates the 3D vector of a celestial object in the device's local coordinate system.
+    private func getDeviceVector(alt: Double, az: Double, rm: CMRotationMatrix) -> (dx: Double, dy: Double, dz: Double) {
+        let altRad = alt * .pi / 180.0
+        let azRad = az * .pi / 180.0
+        let w_x = cos(altRad) * cos(azRad)
+        let w_y = -cos(altRad) * sin(azRad)
+        let w_z = sin(altRad)
+        
+        let d_x = rm.m11 * w_x + rm.m21 * w_y + rm.m31 * w_z
+        let d_y = rm.m12 * w_x + rm.m22 * w_y + rm.m32 * w_z
+        let d_z = rm.m13 * w_x + rm.m23 * w_y + rm.m33 * w_z
+        
+        return (dx: d_x, dy: d_y, dz: d_z)
+    }
+    
+    // Finds the target that is closest to the center of the camera (-Z axis).
+    private func getNearestTarget(targets: [TargetCoordinates], rm: CMRotationMatrix) -> TargetCoordinates? {
+        guard !targets.isEmpty else { return nil }
+        
+        // The most negative `dz` means the vector is most closely aligned with the -Z camera axis.
+        return targets.min { a, b in
+            let vecA = getDeviceVector(alt: a.alt, az: a.az, rm: rm)
+            let vecB = getDeviceVector(alt: b.alt, az: b.az, rm: rm)
+            return vecA.dz < vecB.dz
         }
     }
     
-    private func getNearestTarget() -> TargetCoordinates? {
-        let filtered = astronomyEngine.activeTargets.filter { $0.object.type == selectedFilter }
-        guard !filtered.isEmpty else { return nil }
-        
-        let calAz = motionManager.deviceAzimuth + alignmentOffsetAzimuth
-        let calAlt = motionManager.deviceAltitude + alignmentOffsetAltitude
-        
-        return filtered.min { a, b in
-            let distA = AstronomyMath.angularDistance(alt1: calAlt, az1: calAz, alt2: a.alt, az2: a.az)
-            let distB = AstronomyMath.angularDistance(alt1: calAlt, az1: calAz, alt2: b.alt, az2: b.az)
-            return distA < distB
+    private func isTargetLocked(target: TargetCoordinates, rm: CMRotationMatrix, size: CGSize) -> Bool {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        if let point = AstronomyMath.project(alt: target.alt, az: target.az, rm: rm, screenSize: size) {
+            let dist = sqrt(pow(point.x - center.x, 2) + pow(point.y - center.y, 2))
+            return dist < 80.0
         }
+        return false
     }
     
-    private func angleToTarget(deviceAz: Double, deviceAlt: Double, targetAz: Double, targetAlt: Double) -> Double {
-        var dAz = targetAz - deviceAz
-        if dAz > 180 { dAz -= 360 }
-        if dAz < -180 { dAz += 360 }
+    private func updateSensoryEngine(geometry: GeometryProxy) {
+        guard let rm = motionManager.rotationMatrix else { return }
+        let filteredTargets = astronomyEngine.activeTargets.filter { $0.object.type == selectedFilter }
         
-        let dAlt = targetAlt - deviceAlt
-        return atan2(dAlt, dAz) * 180 / .pi
-    }
-    
-    private func updateSensoryEngine() {
-        guard let nearest = getNearestTarget() else {
+        guard let nearest = getNearestTarget(targets: filteredTargets, rm: rm) else {
             hapticManager.updateHapticFeedback(distance: 999)
             return
         }
         
-        let calAz = motionManager.deviceAzimuth + alignmentOffsetAzimuth
-        let calAlt = motionManager.deviceAltitude + alignmentOffsetAltitude
+        // Convert the 3D angular alignment into an abstract distance for haptics.
+        // `dz` is the cosine of the angle between the target and the camera -Z axis (scaled by -1).
+        // theta = acos(-dz). We multiply by 180/pi to get degrees.
+        let vec = getDeviceVector(alt: nearest.alt, az: nearest.az, rm: rm)
+        let clampedDz = max(-1.0, min(1.0, -vec.dz))
+        let angularDist = acos(clampedDz) * 180.0 / .pi
         
-        let dist = AstronomyMath.angularDistance(alt1: calAlt, az1: calAz, alt2: nearest.alt, az2: nearest.az)
-        
-        hapticManager.updateHapticFeedback(distance: dist)
+        hapticManager.updateHapticFeedback(distance: angularDist)
     }
 }
+
 
 struct CelestialStorySheet: View {
     let object: CelestialObject

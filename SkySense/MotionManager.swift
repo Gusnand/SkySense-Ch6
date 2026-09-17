@@ -7,6 +7,7 @@ class MotionManager: ObservableObject {
     
     @Published var deviceAzimuth: Double = 0.0
     @Published var deviceAltitude: Double = 0.0
+    @Published var rotationMatrix: CMRotationMatrix?
     
     func start() {
         guard motionManager.isDeviceMotionAvailable else { return }
@@ -21,7 +22,6 @@ class MotionManager: ObservableObject {
             let rm = attitude.rotationMatrix
             
             // The back camera points in the -Z direction of the device's local frame.
-            // We transform the local vector (0, 0, -1) to the world frame (.xTrueNorthZVertical).
             let vx = -rm.m13
             let vy = -rm.m23
             let vz = -rm.m33
@@ -35,6 +35,7 @@ class MotionManager: ObservableObject {
             
             self?.deviceAzimuth = az
             self?.deviceAltitude = alt
+            self?.rotationMatrix = rm
         }
     }
     
