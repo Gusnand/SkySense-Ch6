@@ -2,7 +2,18 @@ import Foundation
 import CoreLocation
 import CoreMotion
 import UIKit
-import CoreMotion
+import simd
+
+extension CMRotationMatrix {
+    var simd3x3: simd_double3x3 {
+        // simd_double3x3(columns:) takes COLUMN vectors — column 1 of R is (m11, m21, m31)
+        simd_double3x3(
+            SIMD3(m11, m21, m31),
+            SIMD3(m12, m22, m32),
+            SIMD3(m13, m23, m33)
+        )
+    }
+}
 
 enum AstronomyMath {
     
@@ -69,10 +80,13 @@ enum AstronomyMath {
         let worldY = -east
         let worldZ = up
         
-        // 3. Apply Device Attitude Matrix (inverse)
-        let localX = rm.m11 * worldX + rm.m21 * worldY + rm.m31 * worldZ
-        let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
-        let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
+        // 3. Apply Device Attitude Matrix (row-major via simd)
+        let worldVector = SIMD3<Double>(worldX, worldY, worldZ)
+        let deviceVector = rm.simd3x3 * worldVector
+        
+        let localX = deviceVector.x
+        let localY = deviceVector.y
+        let localZ = -deviceVector.z
         
         if localZ < 0 { return nil }
         

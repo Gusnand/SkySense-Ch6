@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMotion
+import simd
 
 struct ContentView: View {
     @StateObject private var astronomyEngine = AstronomyEngine()
@@ -186,9 +187,12 @@ struct ContentView: View {
         let worldY = -cos(altRad) * sin(azRad)
         let worldZ = sin(altRad)
         
-        let localX = rm.m11 * worldX + rm.m21 * worldY + rm.m31 * worldZ
-        let localY = rm.m12 * worldX + rm.m22 * worldY + rm.m32 * worldZ
-        let localZ = -(rm.m13 * worldX + rm.m23 * worldY + rm.m33 * worldZ)
+        let worldVector = SIMD3<Double>(worldX, worldY, worldZ)
+        let deviceVector = rm.simd3x3 * worldVector
+        
+        let localX = deviceVector.x
+        let localY = deviceVector.y
+        let localZ = -deviceVector.z
         
         let orientation = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
