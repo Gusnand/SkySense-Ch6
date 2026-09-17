@@ -55,7 +55,7 @@ struct ContentView: View {
                                         Text(nearest.object.name)
                                             .font(.headline).bold()
                                             .foregroundColor(.white)
-                                        Text("Locked")
+                                        Text("Tap to learn more")
                                             .font(.caption)
                                             .foregroundColor(.white.opacity(0.8))
                                     }
@@ -70,12 +70,12 @@ struct ContentView: View {
                             // In screen space: +X is right, +Y is DOWN (so device +Y is screen -Y)
                             let angle = atan2(-vec.dy, vec.dx)
                             
-                            Image(systemName: "play.fill")
+                            Image(systemName: "location.north.fill")
                                 .font(.system(size: 24))
                                 .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.5), radius: 4)
-                                // play.fill points right (0 radians)
-                                .rotationEffect(.radians(angle))
+                                .shadow(color: .white, radius: 5)
+                                // Arrow points UP normally. Rotate it +90 to point RIGHT (0 radians)
+                                .rotationEffect(.radians(angle + .pi / 2.0))
                                 .offset(x: cos(angle) * 125, y: sin(angle) * 125)
                         }
                     }
@@ -153,6 +153,7 @@ struct ContentView: View {
                     .presentationBackground(.ultraThinMaterial)
                     .preferredColorScheme(.dark)
                     .presentationDetents([.fraction(0.4), .large], selection: $selectedDetent)
+                    .presentationDragIndicator(.visible)
                     .onAppear {
                         cameraManager.pause()
                         hapticManager.pause()
@@ -259,7 +260,7 @@ struct CelestialStorySheet: View {
         let topSubtitle = object.storyDescription.components(separatedBy: ".").first ?? "Unknown"
         
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
+            VStack(spacing: selectedDetent == .large ? 24 : 12) {
                 // Top Bar
                 ZStack {
                     HStack {
@@ -283,24 +284,26 @@ struct CelestialStorySheet: View {
                             .foregroundColor(.white.opacity(0.6))
                     }
                 }
-                .padding(.top, 20)
+                .padding(.top, 10)
                 
                 // Image
+                let imageSize: CGFloat = selectedDetent == .large ? 240 : 130
+                
                 if let uiImage = UIImage(named: object.name.lowercased()) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 240, height: 240)
+                        .frame(width: imageSize, height: imageSize)
                         .shadow(color: .black.opacity(0.5), radius: 20)
                 } else {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(colors: [.gray.opacity(0.5), .gray.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 240, height: 240)
+                            .frame(width: imageSize, height: imageSize)
                             .shadow(color: .black.opacity(0.5), radius: 20)
                         
                         Image(systemName: object.type == .planet ? "globe" : (object.type == .satellite ? "satellite.fill" : "sparkles"))
-                            .font(.system(size: 80))
+                            .font(.system(size: imageSize / 3))
                             .foregroundColor(.white.opacity(0.5))
                     }
                 }
