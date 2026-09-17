@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreMotion
 import simd
+import Combine
 
 struct ContentView: View {
     @StateObject private var astronomyEngine = AstronomyEngine()
@@ -187,7 +188,7 @@ struct ContentView: View {
         
         let orientation = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .first?.interfaceOrientation ?? .portrait
+            .first?.effectiveGeometry.interfaceOrientation ?? .portrait
         
         var adjX = localX
         var adjY = localY
@@ -296,9 +297,37 @@ struct CelestialStorySheet: View {
                 if let uiImage = UIImage(named: object.name.lowercased()) {
                     Image(uiImage: uiImage)
                         .resizable()
-                        .scaledToFit()
+                        .scaledToFill()
                         .frame(width: imageSize, height: imageSize)
+                        .clipShape(Circle())
                         .shadow(color: .black.opacity(0.5), radius: 20)
+                } else if let urlString = CelestialImageHelper.imageURL(for: object.name) {
+                    CachedAsyncImage(
+                        url: urlString,
+                        imageSize: imageSize,
+                        placeholder: {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [.gray.opacity(0.3), .gray.opacity(0.1)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: imageSize, height: imageSize)
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            .shadow(color: .black.opacity(0.5), radius: 20)
+                        },
+                        fallback: {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [.gray.opacity(0.5), .gray.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: imageSize, height: imageSize)
+                                    .shadow(color: .black.opacity(0.5), radius: 20)
+                                
+                                Image(systemName: object.type == .planet ? "globe" : (object.type == .satellite ? "moon.circle" : "sparkles"))
+                                    .font(.system(size: imageSize / 3))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                        }
+                    )
                 } else {
                     ZStack {
                         Circle()
@@ -306,7 +335,7 @@ struct CelestialStorySheet: View {
                             .frame(width: imageSize, height: imageSize)
                             .shadow(color: .black.opacity(0.5), radius: 20)
                         
-                        Image(systemName: object.type == .planet ? "globe" : (object.type == .satellite ? "satellite.fill" : "sparkles"))
+                        Image(systemName: object.type == .planet ? "globe" : (object.type == .satellite ? "moon.circle" : "sparkles"))
                             .font(.system(size: imageSize / 3))
                             .foregroundColor(.white.opacity(0.5))
                     }
@@ -482,4 +511,102 @@ struct CameraModeSelectorView: View {
 
 #Preview {
     ContentView()
+}
+
+// MARK: - Image Caching & Fetching
+
+class ImageCache {
+    static let shared = NSCache<NSString, UIImage>()
+}
+
+enum ImageLoadState {
+    case loading
+    case success(UIImage)
+    case failure
+}
+
+class ImageLoader: ObservableObject {
+    @Published var state: ImageLoadState = .loading
+    private let urlString: String
+    
+    init(urlString: String) {
+        self.urlString = urlString
+        loadImage()
+    }
+    
+    func loadImage() {
+        if let cachedImage = ImageCache.shared.object(forKey: urlString as NSString) {
+            self.state = .success(cachedImage)
+            return
+        }
+        
+        guard let url = URL(string: urlString) else {
+            self.state = .failure
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data, let downloadedImage = UIImage(data: data) {
+                ImageCache.shared.setObject(downloadedImage, forKey: self.urlString as NSString)
+                DispatchQueue.main.async {
+                    self.state = .success(downloadedImage)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.state = .failure
+                }
+            }
+        }.resume()
+    }
+}
+
+struct CachedAsyncImage<Placeholder: View, Fallback: View>: View {
+    @StateObject private var loader: ImageLoader
+    let imageSize: CGFloat
+    let placeholder: Placeholder
+    let fallback: Fallback
+    
+    init(url: String, imageSize: CGFloat, @ViewBuilder placeholder: () -> Placeholder, @ViewBuilder fallback: () -> Fallback) {
+        _loader = StateObject(wrappedValue: ImageLoader(urlString: url))
+        self.imageSize = imageSize
+        self.placeholder = placeholder()
+        self.fallback = fallback()
+    }
+    
+    var body: some View {
+        switch loader.state {
+        case .loading:
+            placeholder
+        case .success(let image):
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: imageSize, height: imageSize)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.5), radius: 20)
+        case .failure:
+            fallback
+        }
+    }
+}
+
+struct CelestialImageHelper {
+    static let urls: [String: String] = [
+        "Moon": "https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg",
+        "Mercury": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg",
+        "Venus": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Venus-real_color.jpg",
+        "Earth": "https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg",
+        "Mars": "https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg",
+        "Jupiter": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg",
+        "Saturn": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg",
+        "Uranus": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg",
+        "Neptune": "https://upload.wikimedia.org/wikipedia/commons/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg",
+        "Sirius": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Sirius_A_and_B_Hubble_photo.jpg",
+        "Betelgeuse": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Betelgeuse_captured_by_ALMA.jpg",
+        "ISS": "https://upload.wikimedia.org/wikipedia/commons/0/04/International_Space_Station_after_undocking_of_STS-132.jpg"
+    ]
+    
+    static func imageURL(for name: String) -> String? {
+        return urls[name]
+    }
 }

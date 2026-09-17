@@ -93,7 +93,7 @@ enum AstronomyMath {
         // 4. Interface Orientation Compensation
         let orientation = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .first?.interfaceOrientation ?? .portrait
+            .first?.effectiveGeometry.interfaceOrientation ?? .portrait
         
         var adjX = localX
         var adjY = localY
