@@ -57,32 +57,26 @@ enum AstronomyMath {
         let altRad = alt * .pi / 180.0
         let azRad = az * .pi / 180.0
         
-        // 1. Convert spherical Alt/Az to Cartesian world coordinates
-        // Reference frame: X = True North, Y = West, Z = Up
-        let w_x = cos(altRad) * cos(azRad)
-        let w_y = -cos(altRad) * sin(azRad)
-        let w_z = sin(altRad)
+        // 1. Convert Target to 3D Cartesian Vector (East-North-Up)
+        let x = cos(altRad) * sin(azRad)
+        let y = cos(altRad) * cos(azRad)
+        let z = sin(altRad)
         
-        // 2. Transform world coordinates to device coordinates
-        // The rotation matrix (rm) transforms from device to world.
-        // To go from world to device, we multiply by the inverse (transpose) of rm.
-        let d_x = rm.m11 * w_x + rm.m21 * w_y + rm.m31 * w_z
-        let d_y = rm.m12 * w_x + rm.m22 * w_y + rm.m32 * w_z
-        let d_z = rm.m13 * w_x + rm.m23 * w_y + rm.m33 * w_z
+        // 2. Apply Device Attitude Matrix (inverse)
+        let localX = rm.m11 * x + rm.m21 * y + rm.m31 * z
+        let localY = rm.m12 * x + rm.m22 * y + rm.m32 * z
+        // localZ is negated so positive means it is in front of the camera
+        let localZ = -(rm.m13 * x + rm.m23 * y + rm.m33 * z)
         
-        // The device camera points along the -Z axis.
-        // If the object's Z coordinate is >= 0, it is behind the camera (not visible).
-        if d_z >= 0 { return nil }
+        // 3. Behind-Camera Clipping
+        if localZ < 0 { return nil }
         
-        // 3. Project onto 2D screen (Pinhole camera model)
-        // A typical iPhone wide camera has a diagonal FOV around 65-70 degrees.
-        // Using focal length f ~ screenSize.height * 0.9 provides a good estimation.
-        let f = screenSize.height * 0.9
+        // 4. Trigonometric 2D Projection with FOV
+        let fovH = 70.0 * .pi / 180.0
+        let fovV = 60.0 * .pi / 180.0
         
-        // d_x is right (+X), d_y is up (+Y).
-        // On iOS screens, +X is right, but +Y is DOWN.
-        let screenX = (screenSize.width / 2.0) + (d_x / -d_z) * f
-        let screenY = (screenSize.height / 2.0) - (d_y / -d_z) * f
+        let screenX = (screenSize.width / 2.0) + (localX / localZ) * (screenSize.width / (2.0 * tan(fovH / 2.0)))
+        let screenY = (screenSize.height / 2.0) - (localY / localZ) * (screenSize.height / (2.0 * tan(fovV / 2.0)))
         
         return CGPoint(x: screenX, y: screenY)
     }

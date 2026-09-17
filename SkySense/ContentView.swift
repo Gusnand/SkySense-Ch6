@@ -160,8 +160,8 @@ struct ContentView: View {
                 motionManager.stop()
                 hapticManager.pause()
             }
-            .onChange(of: motionManager.deviceAzimuth) { _ in updateSensoryEngine(geometry: geometry) }
-            .onChange(of: selectedFilter) { _ in updateSensoryEngine(geometry: geometry) }
+            .onChange(of: motionManager.deviceAzimuth) { updateSensoryEngine(geometry: geometry) }
+            .onChange(of: selectedFilter) { updateSensoryEngine(geometry: geometry) }
             .sheet(item: $selectedCelestialObject) { object in
                 CelestialStorySheet(object: object)
                     .presentationBackground(.ultraThinMaterial)
@@ -182,23 +182,23 @@ struct ContentView: View {
     private func getDeviceVector(alt: Double, az: Double, rm: CMRotationMatrix) -> (dx: Double, dy: Double, dz: Double) {
         let altRad = alt * .pi / 180.0
         let azRad = az * .pi / 180.0
-        let w_x = cos(altRad) * cos(azRad)
-        let w_y = -cos(altRad) * sin(azRad)
-        let w_z = sin(altRad)
+        let x = cos(altRad) * sin(azRad)
+        let y = cos(altRad) * cos(azRad)
+        let z = sin(altRad)
         
-        let d_x = rm.m11 * w_x + rm.m21 * w_y + rm.m31 * w_z
-        let d_y = rm.m12 * w_x + rm.m22 * w_y + rm.m32 * w_z
-        let d_z = rm.m13 * w_x + rm.m23 * w_y + rm.m33 * w_z
+        let localX = rm.m11 * x + rm.m21 * y + rm.m31 * z
+        let localY = rm.m12 * x + rm.m22 * y + rm.m32 * z
+        let localZ = -(rm.m13 * x + rm.m23 * y + rm.m33 * z)
         
-        return (dx: d_x, dy: d_y, dz: d_z)
+        return (dx: localX, dy: localY, dz: localZ)
     }
     
     // Finds the target that is closest to the center of the camera (-Z axis).
     private func getNearestTarget(targets: [TargetCoordinates], rm: CMRotationMatrix) -> TargetCoordinates? {
         guard !targets.isEmpty else { return nil }
         
-        // The most negative `dz` means the vector is most closely aligned with the -Z camera axis.
-        return targets.min { a, b in
+        // The most positive `dz` means the vector is most closely aligned with the camera axis.
+        return targets.max { a, b in
             let vecA = getDeviceVector(alt: a.alt, az: a.az, rm: rm)
             let vecB = getDeviceVector(alt: b.alt, az: b.az, rm: rm)
             return vecA.dz < vecB.dz
@@ -224,10 +224,10 @@ struct ContentView: View {
         }
         
         // Convert the 3D angular alignment into an abstract distance for haptics.
-        // `dz` is the cosine of the angle between the target and the camera -Z axis (scaled by -1).
-        // theta = acos(-dz). We multiply by 180/pi to get degrees.
+        // `dz` is the cosine of the angle between the target and the camera axis.
+        // theta = acos(dz). We multiply by 180/pi to get degrees.
         let vec = getDeviceVector(alt: nearest.alt, az: nearest.az, rm: rm)
-        let clampedDz = max(-1.0, min(1.0, -vec.dz))
+        let clampedDz = max(-1.0, min(1.0, vec.dz))
         let angularDist = acos(clampedDz) * 180.0 / .pi
         
         hapticManager.updateHapticFeedback(distance: angularDist)
