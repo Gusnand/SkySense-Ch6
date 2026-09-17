@@ -10,6 +10,7 @@ struct ContentView: View {
     
     @State private var selectedFilter: CelestialObjectType = .planet
     @State private var selectedCelestialObject: CelestialObject?
+    @State private var selectedDetent: PresentationDetent = .fraction(0.4)
     
     var body: some View {
         GeometryReader { geometry in
@@ -69,13 +70,13 @@ struct ContentView: View {
                             // In screen space: +X is right, +Y is DOWN (so device +Y is screen -Y)
                             let angle = atan2(-vec.dy, vec.dx)
                             
-                            Image(systemName: "location.north.fill")
-                                .font(.system(size: 30))
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 24))
                                 .foregroundColor(.white)
-                                .shadow(color: .white, radius: 5)
-                                // Arrow points UP normally. Rotate it +90 to point RIGHT (0 radians)
-                                .rotationEffect(.radians(angle + .pi / 2.0))
-                                .offset(x: cos(angle) * 150, y: sin(angle) * 150)
+                                .shadow(color: .black.opacity(0.5), radius: 4)
+                                // play.fill points right (0 radians)
+                                .rotationEffect(.radians(angle))
+                                .offset(x: cos(angle) * 125, y: sin(angle) * 125)
                         }
                     }
                 }
@@ -96,58 +97,42 @@ struct ContentView: View {
                     Spacer()
                     
                     // Reticle / Crosshair in Center
-                    Image(systemName: "plus")
-                        .font(.system(size: 40, weight: .ultraLight))
-                        .foregroundColor(.white.opacity(0.5))
+                    ZStack {
+                        Circle()
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                            .frame(width: 250, height: 250)
+                        
+                        Circle()
+                            .stroke(.white.opacity(0.1), lineWidth: 4)
+                            .frame(width: 230, height: 230)
+                    }
                     
                     Spacer()
                     
                     // Bottom HUD (Category Pills and Toggle)
-                    HStack(alignment: .bottom) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                Button(action: { selectedFilter = .planet }) {
-                                    Text("Planets")
-                                        .fontWeight(selectedFilter == .planet ? .bold : .medium)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .foregroundColor(.white)
-                                        .liquidGlass()
-                                }
-                                Button(action: { selectedFilter = .star }) {
-                                    Text("Bright Stars")
-                                        .fontWeight(selectedFilter == .star ? .bold : .medium)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .foregroundColor(.white)
-                                        .liquidGlass()
-                                }
-                                Button(action: { selectedFilter = .satellite }) {
-                                    Text("Satellites")
-                                        .fontWeight(selectedFilter == .satellite ? .bold : .medium)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .foregroundColor(.white)
-                                        .liquidGlass()
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                        
-                        Spacer()
+                    HStack(spacing: 16) {
+                        CameraModeSelectorView(selectedFilter: $selectedFilter)
+                            .frame(maxWidth: .infinity)
                         
                         // Night Vision Toggle
                         Button(action: {
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
                             cameraManager.isNightVisionEnabled.toggle()
                         }) {
                             Image(systemName: cameraManager.isNightVisionEnabled ? "moon.stars.fill" : "moon")
                                 .font(.title3)
                                 .foregroundColor(cameraManager.isNightVisionEnabled ? .yellow : .white)
-                                .padding(12)
-                                .liquidGlass()
+                                .frame(width: 50, height: 50)
+                                .background(.ultraThinMaterial)
+                                .environment(\.colorScheme, .dark)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(LinearGradient(colors: [.white.opacity(0.5), .clear, .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.5)
+                                )
                         }
-                        .padding(.trailing)
                     }
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 30)
                 }
             }
@@ -164,16 +149,17 @@ struct ContentView: View {
             .onChange(of: motionManager.deviceAzimuth) { updateSensoryEngine(geometry: geometry) }
             .onChange(of: selectedFilter) { updateSensoryEngine(geometry: geometry) }
             .sheet(item: $selectedCelestialObject) { object in
-                CelestialStorySheet(object: object)
+                CelestialStorySheet(object: object, selectedDetent: $selectedDetent)
                     .presentationBackground(.ultraThinMaterial)
                     .preferredColorScheme(.dark)
-                    .presentationDetents([.fraction(0.4), .large])
+                    .presentationDetents([.fraction(0.4), .large], selection: $selectedDetent)
                     .onAppear {
                         cameraManager.pause()
                         hapticManager.pause()
                     }
                     .onDisappear {
                         cameraManager.resume()
+                        selectedDetent = .fraction(0.4)
                     }
             }
         }
@@ -262,65 +248,228 @@ struct ContentView: View {
 
 struct CelestialStorySheet: View {
     let object: CelestialObject
+    @Binding var selectedDetent: PresentationDetent
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var isDoYouKnowExpanded = true
+    @State private var isFunFactExpanded = true
     
     var body: some View {
         let content = CelestialContentDatabase.content.first { $0.name == object.name }
+        let topSubtitle = object.storyDescription.components(separatedBy: ".").first ?? "Unknown"
         
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack(alignment: .center, spacing: 16) {
-                    Image(systemName: object.type == .planet ? "circle.hexagonpath" : (object.type == .satellite ? "globe.americas" : "sparkles"))
-                        .font(.largeTitle)
-                        .foregroundColor(object.type == .planet ? .orange : (object.type == .satellite ? .green : .cyan))
-                        .shadow(color: .white.opacity(0.3), radius: 10)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 24) {
+                // Top Bar
+                ZStack {
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 32, height: 32)
+                                .background(Color.white.opacity(0.15))
+                                .clipShape(Circle())
+                        }
+                        Spacer()
+                    }
                     
-                    VStack(alignment: .leading) {
+                    VStack(spacing: 4) {
                         Text(object.name)
-                            .font(.title2.weight(.bold))
+                            .font(.headline)
                             .foregroundColor(.white)
-                        
-                        Text(content?.personaSubtitle ?? (object.type == .planet ? "Planet" : (object.type == .satellite ? "Satellite" : "Star")))
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.7))
+                        Text(topSubtitle)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
                 .padding(.top, 20)
                 
-                if let content = content {
-                    HStack(spacing: 15) {
-                        Text(content.stat1).font(.caption).foregroundColor(.white.opacity(0.8))
-                        Text(content.stat2).font(.caption).foregroundColor(.white.opacity(0.8))
-                        Text(content.stat3).font(.caption).foregroundColor(.white.opacity(0.8))
-                    }
-                    .padding(.vertical, 10)
-                    
-                    Text(content.mythParagraph)
-                        .font(.body.weight(.medium))
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineSpacing(6)
-                    
-                    Text(content.realityParagraph)
-                        .font(.body.weight(.medium))
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineSpacing(6)
+                // Image
+                if let uiImage = UIImage(named: object.name.lowercased()) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 240, height: 240)
+                        .shadow(color: .black.opacity(0.5), radius: 20)
                 } else {
-                    HStack(spacing: 15) {
-                        Text("Magnitude: \(String(format: "%.2f", object.apparentMagnitude))")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(colors: [.gray.opacity(0.5), .gray.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 240, height: 240)
+                            .shadow(color: .black.opacity(0.5), radius: 20)
+                        
+                        Image(systemName: object.type == .planet ? "globe" : (object.type == .satellite ? "satellite.fill" : "sparkles"))
+                            .font(.system(size: 80))
+                            .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(.vertical, 10)
-                    
-                    Text(object.storyDescription)
-                        .font(.body.weight(.medium))
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineSpacing(6)
                 }
                 
-                Spacer()
+                // Persona
+                VStack(spacing: 12) {
+                    Text("Persona")
+                        .font(.headline)
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    if let persona = content?.personaSubtitle {
+                        Text("\"\(persona)\"")
+                            .font(.title3.italic().weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                    } else {
+                        Text("\"\(object.storyDescription)\"")
+                            .font(.title3.italic().weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Conditional Content for .large detent only
+                if selectedDetent == .large {
+                    VStack(alignment: .leading, spacing: 30) {
+                        
+                        // Bio
+                        if let content = content {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Bio")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                bioRow(title: "Stat 1", value: content.stat1)
+                                bioRow(title: "Stat 2", value: content.stat2)
+                                bioRow(title: "Stat 3", value: content.stat3)
+                            }
+                        }
+                        
+                        // Do you Know?
+                        if let myth = content?.mythParagraph {
+                            accordionSection(title: "Do you Know?", content: myth, isExpanded: $isDoYouKnowExpanded)
+                        }
+                        
+                        // Fun Fact
+                        if let reality = content?.realityParagraph {
+                            accordionSection(title: "Fun Fact about \(object.name)", content: reality, isExpanded: $isFunFactExpanded)
+                        }
+                    }
+                    .padding(.top, 20)
+                    .transition(.opacity) // Smooth transition when sheet expands
+                }
+                
+                Spacer(minLength: 40)
             }
-            .padding(30)
+            .padding(.horizontal, 24)
         }
+        .animation(.default, value: selectedDetent)
+    }
+    
+    private func bioRow(title: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 60, alignment: .leading)
+            
+            Text(value)
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
+        }
+    }
+    
+    private func accordionSection(title: String, content: String, isExpanded: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: {
+                withAnimation { isExpanded.wrappedValue.toggle() }
+            }) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(isExpanded.wrappedValue ? 180 : 0))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+            }
+            
+            if isExpanded.wrappedValue {
+                Text(content)
+                    .font(.body)
+                    .italic()
+                    .foregroundColor(.white.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+struct CameraModeSelectorView: View {
+    @Binding var selectedFilter: CelestialObjectType
+    
+    let filters: [(type: CelestialObjectType, name: String, icon: String)] = [
+        (.planet, "Planets", "globe"),
+        (.star, "Stars", "sparkles"),
+        (.satellite, "Satellites", "satellite")
+    ]
+    
+    var scrollBinding: Binding<CelestialObjectType?> {
+        Binding(
+            get: { selectedFilter },
+            set: { if let val = $0 { selectedFilter = val } }
+        )
+    }
+    
+    var body: some View {
+        GeometryReader { geo in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 24) {
+                    ForEach(filters, id: \.type) { filter in
+                        HStack(spacing: 6) {
+                            if selectedFilter == filter.type {
+                                Image(systemName: filter.icon)
+                            } else {
+                                Image(systemName: filter.icon)
+                                    .opacity(0.5)
+                            }
+                            Text(filter.name)
+                                .font(.system(size: 16, weight: selectedFilter == filter.type ? .semibold : .regular))
+                        }
+                        .foregroundColor(selectedFilter == filter.type ? .yellow : .white.opacity(0.6))
+                        .id(filter.type)
+                        .onTapGesture {
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedFilter = filter.type
+                            }
+                        }
+                        .padding(.vertical, 12)
+                    }
+                }
+                .scrollTargetLayout()
+                .padding(.horizontal, max(0, (geo.size.width / 2) - 60))
+            }
+            .scrollPosition(id: scrollBinding, anchor: .center)
+            .scrollTargetBehavior(.viewAligned)
+            .background(.ultraThinMaterial)
+            .environment(\.colorScheme, .dark)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().stroke(LinearGradient(colors: [.white.opacity(0.5), .clear, .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.5)
+            )
+            .mask(
+                LinearGradient(stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.15),
+                    .init(color: .black, location: 0.85),
+                    .init(color: .clear, location: 1)
+                ], startPoint: .leading, endPoint: .trailing)
+            )
+        }
+        .frame(height: 50)
     }
 }
 
