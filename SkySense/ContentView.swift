@@ -47,27 +47,30 @@ struct ContentView: View {
                         
                         if isLocked {
                             // TARGET IN FOV -> Render the "Locked" Tooltip
-                            VStack {
-                                Spacer()
-                                Button(action: {
-                                    selectedCelestialObject = nearest.object
-                                }) {
-                                    VStack(spacing: 4) {
-                                        Text(nearest.object.name)
-                                            .font(.headline).bold()
-                                            .foregroundColor(.white)
-                                        Text("Tap to learn more")
-                                            .font(.caption)
-                                            .foregroundColor(.white.opacity(0.8))
-                                    }
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .liquidGlass()
+                            VStack(spacing: 16) {
+                                Text("You found an object. Tap 2x anywhere to view.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black, radius: 2)
+                                
+                                HStack(spacing: 8) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(.white)
+                                    Text(nearest.object.name)
+                                        .font(.headline).bold()
+                                        .foregroundColor(.white)
                                 }
-                                Spacer()
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(.ultraThinMaterial)
+                                .environment(\.colorScheme, .dark)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule().stroke(LinearGradient(colors: [.white.opacity(0.5), .clear, .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.5)
+                                )
                             }
+                            .offset(y: 190) // Position it below the central reticle
                         } else {
-                            // TARGET OFF CENTER -> Render Directional Edge Arrow
                             // In screen space: +X is right, +Y is DOWN (so device +Y is screen -Y)
                             let angle = atan2(-vec.dy, vec.dx)
                             
@@ -143,6 +146,19 @@ struct ContentView: View {
             .preferredColorScheme(.dark)
             .colorMultiply(cameraManager.isNightVisionEnabled ? .red : .white)
             .animation(.easeInOut, value: cameraManager.isNightVisionEnabled)
+            .onTapGesture(count: 2) {
+                if let rm = motionManager.rotationMatrix {
+                    let filteredTargets = astronomyEngine.activeTargets.filter { $0.object.type == selectedFilter }
+                    if let nearest = getNearestTarget(targets: filteredTargets, rm: rm) {
+                        let isLocked = isTargetLocked(target: nearest, rm: rm, size: geometry.size)
+                        if isLocked {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            selectedCelestialObject = nearest.object
+                        }
+                    }
+                }
+            }
             .onAppear {
                 astronomyEngine.startTracking()
                 motionManager.start()
